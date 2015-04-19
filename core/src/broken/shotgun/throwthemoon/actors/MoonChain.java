@@ -32,6 +32,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 
@@ -39,6 +40,7 @@ public class MoonChain extends Actor {
     private static final String TEXTURE_FILENAME = "chain.png";
     private final Texture texture;
     private final Rectangle collisionArea;
+    private final Vector2 position;
 
     private Player attachedPlayer;
 
@@ -57,6 +59,7 @@ public class MoonChain extends Actor {
         setOrigin(getWidth() / 2, 0);
 
         collisionArea = new Rectangle(getX(), getY(), getWidth(), getHeight());
+        position = new Vector2(getX(), getY());
     }
 
     @Override
@@ -108,5 +111,9 @@ public class MoonChain extends Actor {
 
     public Rectangle getCollisionArea() {
         return collisionArea;
+    }
+
+    public Vector2 getPosition() {
+        return collisionArea.getPosition(position);
     }
 }

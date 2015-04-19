@@ -200,6 +200,8 @@ public class Player extends Actor {
     }
 
     public void performAttack(InputEvent event, int count) {
+        if(takingDamage) return;
+
         flipX = getX() + getOriginX() > event.getStageX();
         stateTime = 0.0f;
         state = State.ATTACK;
@@ -249,7 +251,7 @@ public class Player extends Actor {
     public void die() {
         addAction(
             sequence(
-                fadeOut(0.4f, Interpolation.fade),
+                color(Color.RED, 4f),
                 removeActor()));
     }
 }

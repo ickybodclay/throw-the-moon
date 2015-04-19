@@ -179,7 +179,11 @@ public class GameStage extends Stage {
 
         handleCollisions();
 
-        if(triggerSpawnWall(player.getX())) {
+        if(isChainOffscreen()) {
+            player.die();
+            // TODO show game over
+        }
+        else if(triggerSpawnWall(player.getX())) {
             spawnEnemies(currentLevel.enemySpawnWallList.get(wallIndex).enemySpawnList);
 
             currentLevel.enemySpawnWallList.get(wallIndex).triggered = true;
@@ -198,6 +202,10 @@ public class GameStage extends Stage {
         }
     }
 
+    private boolean isChainOffscreen() {
+        return stageToScreenCoordinates(chain.getPosition()).x <= -32;
+    }
+
     private void handleCollisions() {
         for(Actor entity : getActors()) {
             if(entity instanceof Enemy) {
@@ -208,7 +216,7 @@ public class GameStage extends Stage {
                 }
             }
             if(entity instanceof MoonChain && !((MoonChain) entity).isAttached() && !player.isTakingDamage()) {
-                if(player.getCollisionArea().overlaps(((MoonChain) entity).getCollisionArea())) {
+                if (player.getCollisionArea().overlaps(((MoonChain) entity).getCollisionArea())) {
                     chain.attachTail(player);
                 }
             }
