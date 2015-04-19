@@ -30,36 +30,54 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
-public class Background extends Actor {
-    private static final String TEXTURE_FILENAME = "davidbowies.png";
-    private static final int TILE_COUNT = 5;
+public class MoonChain extends Actor {
+    private static final String TEXTURE_FILENAME = "chain.png";
+    private final Texture texture;
 
-    private Texture texture;
+    private Player attachedPlayer;
 
-    public Background(AssetManager manager) {
+    private static final int TILE_COUNT = 50;
+
+    public MoonChain(final AssetManager manager) {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
         manager.load(TEXTURE_FILENAME, Texture.class);
         manager.finishLoading();
 
         texture = manager.get(TEXTURE_FILENAME);
-        texture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.ClampToEdge);
-        setWidth(texture.getWidth() * TILE_COUNT);
-        setHeight(texture.getHeight());
+        texture.setWrap(Texture.TextureWrap.ClampToEdge, Texture.TextureWrap.Repeat);
+
+        setWidth(texture.getWidth());
+        setHeight(texture.getHeight() * TILE_COUNT);
+        setOrigin(getWidth() / 2, 0);
     }
 
     @Override
     public void act(float delta) {
         super.act(delta);
+
+        if(attachedPlayer != null) {
+            setPosition(attachedPlayer.getX() + attachedPlayer.getOriginX(),
+                    attachedPlayer.getY() + attachedPlayer.getOriginY());
+        }
     }
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
+
         batch.draw(texture,
-                0, 0, // x, y
+                getX(), getY(), // x, y
                 getWidth(), // width
                 getHeight(), // height
-                0, 1, // u, v
-                TILE_COUNT, 0); // u2, v2
+                1, 0, // u, v
+                0, TILE_COUNT); // u2, v2
+    }
+
+    public void attachTail(Player player) {
+        attachedPlayer = player;
+    }
+
+    public void detachTail() {
+        attachedPlayer = null;
     }
 }

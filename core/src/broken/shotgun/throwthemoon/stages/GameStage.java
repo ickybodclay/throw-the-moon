@@ -38,6 +38,8 @@ import java.util.Random;
 
 import broken.shotgun.throwthemoon.actors.Background;
 import broken.shotgun.throwthemoon.actors.Enemy;
+import broken.shotgun.throwthemoon.actors.Moon;
+import broken.shotgun.throwthemoon.actors.MoonChain;
 import broken.shotgun.throwthemoon.actors.Player;
 import broken.shotgun.throwthemoon.models.EnemySpawn;
 import broken.shotgun.throwthemoon.models.EnemySpawnWall;
@@ -57,6 +59,8 @@ public class GameStage extends Stage {
 
     private Background background;
     private Player player;
+    private Moon moon;
+    private MoonChain chain;
 
     private final Vector2 touchPoint;
 
@@ -75,10 +79,20 @@ public class GameStage extends Stage {
         background = new Background(manager);
         addActor(background);
 
+        chain = new MoonChain(manager);
+        addActor(chain);
+
         player = new Player(manager);
         player.setX(100);
         player.setY(300);
         addActor(player);
+
+        chain.attachTail(player);
+
+        moon = new Moon(manager);
+        moon.setX(100);
+        moon.setY(800);
+        addActor(moon);
 
         touchPoint = new Vector2();
 

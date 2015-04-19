@@ -72,7 +72,7 @@ public class Player extends Actor {
     private float stateTime = 0.0f;
     private boolean flipX = false;
 
-    public Player(AssetManager manager) {
+    public Player(final AssetManager manager) {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
         manager.load(TEXTURE_FILENAME, Texture.class);
         manager.finishLoading();

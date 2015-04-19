@@ -28,38 +28,63 @@ import com.badlogic.gdx.assets.loaders.TextureLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
-public class Background extends Actor {
-    private static final String TEXTURE_FILENAME = "davidbowies.png";
-    private static final int TILE_COUNT = 5;
+public class Moon extends Actor {
 
-    private Texture texture;
+    private static final String TEXTURE_FILENAME = "moon.png";
+    private final Texture texture;
+    private TextureRegion currentFrame;
+    private static final int MAX_VELOCITY_X = 100;
+    private static final int MAX_VELOCITY_Y = 1000;
 
-    public Background(AssetManager manager) {
+    public static enum State {
+        ORBIT,
+        CRASHING,
+        GROUND
+    }
+
+    private State currentState;
+
+    public Moon(final AssetManager manager) {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
         manager.load(TEXTURE_FILENAME, Texture.class);
         manager.finishLoading();
 
         texture = manager.get(TEXTURE_FILENAME);
-        texture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.ClampToEdge);
-        setWidth(texture.getWidth() * TILE_COUNT);
-        setHeight(texture.getHeight());
+
+        currentFrame = new TextureRegion(texture);
+
+        setWidth(currentFrame.getRegionWidth());
+        setHeight(currentFrame.getRegionHeight());
+        setOrigin(getWidth() / 2, getHeight() / 2);
+
+        currentState = State.ORBIT;
     }
 
     @Override
     public void act(float delta) {
         super.act(delta);
+
+        switch (currentState) {
+            case ORBIT:
+                break;
+            case CRASHING:
+                break;
+            case GROUND:
+                break;
+        }
     }
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
-        batch.draw(texture,
-                0, 0, // x, y
-                getWidth(), // width
-                getHeight(), // height
-                0, 1, // u, v
-                TILE_COUNT, 0); // u2, v2
+        batch.draw(currentFrame,
+                getX(), getY(),
+                getOriginX(), getOriginY(),
+                getWidth(), getHeight(),
+                getScaleX(), getScaleY(),
+                getRotation());
     }
 }
