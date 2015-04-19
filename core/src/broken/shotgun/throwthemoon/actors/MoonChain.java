@@ -26,13 +26,19 @@ package broken.shotgun.throwthemoon.actors;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.TextureLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 
 public class MoonChain extends Actor {
     private static final String TEXTURE_FILENAME = "chain.png";
     private final Texture texture;
+    private final Rectangle collisionArea;
 
     private Player attachedPlayer;
 
@@ -49,6 +55,8 @@ public class MoonChain extends Actor {
         setWidth(texture.getWidth());
         setHeight(texture.getHeight() * TILE_COUNT);
         setOrigin(getWidth() / 2, 0);
+
+        collisionArea = new Rectangle(getX(), getY(), getWidth(), getHeight());
     }
 
     @Override
@@ -59,6 +67,8 @@ public class MoonChain extends Actor {
             setPosition(attachedPlayer.getX() + attachedPlayer.getOriginX(),
                     attachedPlayer.getY() + attachedPlayer.getOriginY());
         }
+
+        collisionArea.setPosition(getX(), getY());
     }
 
     @Override
@@ -73,11 +83,30 @@ public class MoonChain extends Actor {
                 0, TILE_COUNT); // u2, v2
     }
 
+    @Override
+    public void drawDebug(ShapeRenderer shapes) {
+        super.drawDebug(shapes);
+        if (!getDebug()) return;
+        shapes.set(ShapeRenderer.ShapeType.Line);
+        shapes.setColor(Color.GREEN);
+        shapes.rect(collisionArea.x, collisionArea.y, collisionArea.width, collisionArea.height);
+    }
+
     public void attachTail(Player player) {
         attachedPlayer = player;
+        clearActions();
     }
 
     public void detachTail() {
         attachedPlayer = null;
+        addAction(Actions.moveTo(-50, getY(), 8f, Interpolation.fade));
+    }
+
+    public boolean isAttached() {
+        return attachedPlayer != null;
+    }
+
+    public Rectangle getCollisionArea() {
+        return collisionArea;
     }
 }

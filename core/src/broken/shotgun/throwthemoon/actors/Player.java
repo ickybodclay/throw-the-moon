@@ -33,10 +33,17 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.color;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.run;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 
 public class Player extends Actor {
     private static final String TEXTURE_FILENAME = "camacho.png";
@@ -54,6 +61,7 @@ public class Player extends Actor {
 
     private final Rectangle collisionArea;
     private final Rectangle attackArea;
+    private boolean takingDamage = false;
 
     private TextureRegion currentFrame;
 
@@ -157,12 +165,14 @@ public class Player extends Actor {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
+        batch.setColor(getColor());
         batch.draw(currentFrame,
                 getX(), getY(),
                 getOriginX(), getOriginY(),
                 getWidth(), getHeight(),
                 flipX ? -getScaleX() : getScaleX(), getScaleY(),
                 getRotation());
+        batch.setColor(Color.WHITE);
     }
 
     @Override
@@ -213,5 +223,33 @@ public class Player extends Actor {
 
     public Rectangle getCollisionArea() {
         return collisionArea;
+    }
+
+    public boolean isTakingDamage() {
+        return takingDamage;
+    }
+
+    public void takeDamage() {
+        if(takingDamage) return;
+
+        takingDamage = true;
+
+        addAction(
+            sequence(
+                    sequence(color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f), color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f), color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f)),
+                    run(new Runnable() {
+                        @Override
+                        public void run() {
+                            takingDamage = false;
+                        }
+                    })
+            ));
+    }
+
+    public void die() {
+        addAction(
+            sequence(
+                fadeOut(0.4f, Interpolation.fade),
+                removeActor()));
     }
 }

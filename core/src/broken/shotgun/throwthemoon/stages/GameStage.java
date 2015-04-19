@@ -34,6 +34,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.utils.ActorGestureListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
+import java.util.List;
 import java.util.Random;
 
 import broken.shotgun.throwthemoon.actors.Background;
@@ -176,10 +177,10 @@ public class GameStage extends Stage {
 
         playerScreenX = stageToScreenCoordinates(player.getPosition()).x;
 
+        handleCollisions();
+
         if(triggerSpawnWall(player.getX())) {
-            for(EnemySpawn spawn : currentLevel.enemySpawnWallList.get(wallIndex).enemySpawnList) {
-                spawnEnemy(spawn);
-            }
+            spawnEnemies(currentLevel.enemySpawnWallList.get(wallIndex).enemySpawnList);
 
             currentLevel.enemySpawnWallList.get(wallIndex).triggered = true;
         }
@@ -197,6 +198,23 @@ public class GameStage extends Stage {
         }
     }
 
+    private void handleCollisions() {
+        for(Actor entity : getActors()) {
+            if(entity instanceof Enemy) {
+                Enemy enemy = (Enemy) entity;
+                if(player.getCollisionArea().overlaps(enemy.getCollisionArea())) {
+                    chain.detachTail();
+                    player.takeDamage();
+                }
+            }
+            if(entity instanceof MoonChain && !((MoonChain) entity).isAttached() && !player.isTakingDamage()) {
+                if(player.getCollisionArea().overlaps(((MoonChain) entity).getCollisionArea())) {
+                    chain.attachTail(player);
+                }
+            }
+        }
+    }
+
     public boolean shouldScrollCamera(float x) {
         return playerScreenX > getWidth() * SCROLL_SCREEN_PERCENT_TRIGGER;
     }
@@ -211,6 +229,31 @@ public class GameStage extends Stage {
         return wallIndex < currentLevel.enemySpawnWallList.size() &&
                 currentLevel.enemySpawnWallList.get(wallIndex).triggered &&
                 !currentLevel.enemySpawnWallList.get(wallIndex).destroyed;
+    }
+
+    public void spawnEnemies(List<EnemySpawn> spawnList) {
+        int offsetY = 0;
+        for(EnemySpawn spawn : spawnList) {
+            Enemy newEnemy = new Enemy(manager);
+            Vector2 spawnPoint = new Vector2();
+            spawnPoint.y = offsetY + random.nextInt((int) (getHeight() / spawnList.size()));
+            switch (spawn.location) {
+                case FRONT:
+                    spawnPoint.x = getWidth() - 300;
+                    break;
+                case BACK:
+                    spawnPoint.x = 50;
+                    break;
+            }
+
+            screenToStageCoordinates(spawnPoint);
+            newEnemy.setPosition(spawnPoint.x, spawnPoint.y);
+            newEnemy.setColor(1.0f, 1.0f, 1.0f, 0.0f);
+            newEnemy.addAction(Actions.fadeIn(0.5f));
+            addActor(newEnemy);
+
+            offsetY += (int) (getHeight() / spawnList.size());
+        }
     }
 
     public void spawnEnemy(EnemySpawn spawn) {

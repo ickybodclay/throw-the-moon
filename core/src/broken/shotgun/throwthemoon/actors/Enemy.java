@@ -31,13 +31,17 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.addAction;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.color;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.forever;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.moveBy;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.parallel;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
@@ -72,8 +76,9 @@ public class Enemy extends Actor {
 
         setWidth(currentFrame.getRegionWidth());
         setHeight(currentFrame.getRegionHeight());
+        setOrigin(getWidth() / 2, getHeight() / 2);
 
-        collisionArea = new Rectangle(0, 0, (int)getWidth(), (int)getHeight());
+        collisionArea = new Rectangle(50, 0, (int)getWidth() - 100, (int)getHeight());
 
         health = 5;
     }
@@ -83,7 +88,7 @@ public class Enemy extends Actor {
         super.act(delta);
         stateTime += delta;
         currentFrame = idle.getKeyFrame(stateTime);
-        collisionArea.setPosition(getX(), getY());
+        collisionArea.setPosition(getX() + 50, getY());
     }
 
     @Override
@@ -92,6 +97,14 @@ public class Enemy extends Actor {
         batch.setColor(getColor());
         batch.draw(currentFrame, getX(), getY(), getOriginX(), getOriginY(), getWidth(), getHeight(), getScaleX(), getScaleY(), getRotation());
         batch.setColor(Color.WHITE);
+    }
+
+    @Override
+    public void drawDebug(ShapeRenderer shapes) {
+        if (!getDebug()) return;
+        shapes.set(ShapeRenderer.ShapeType.Line);
+        shapes.setColor(Color.GREEN);
+        shapes.rect(collisionArea.x, collisionArea.y, collisionArea.width, collisionArea.height);
     }
 
     public Rectangle getCollisionArea() {
