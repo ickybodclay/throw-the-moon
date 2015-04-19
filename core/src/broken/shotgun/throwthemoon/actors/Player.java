@@ -190,7 +190,7 @@ public class Player extends Actor {
     }
 
     public void performAttack(InputEvent event, int count) {
-        flipX = getX() > event.getStageX();
+        flipX = getX() + getOriginX() > event.getStageX();
         stateTime = 0.0f;
         state = State.ATTACK;
         currentAttackKeyFrame =

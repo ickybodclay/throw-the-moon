@@ -32,14 +32,11 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
 public class Moon extends Actor {
-
     private static final String TEXTURE_FILENAME = "moon.png";
     private final Texture texture;
     private TextureRegion currentFrame;
-    private static final int MAX_VELOCITY_X = 100;
-    private static final int MAX_VELOCITY_Y = 1000;
 
-    public static enum State {
+    public enum State {
         ORBIT,
         CRASHING,
         GROUND
