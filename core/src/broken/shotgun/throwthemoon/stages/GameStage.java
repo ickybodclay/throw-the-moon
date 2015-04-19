@@ -32,7 +32,9 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.utils.ActorGestureListener;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.ScalingViewport;
+import com.badlogic.gdx.utils.viewport.StretchViewport;
 
 import java.util.List;
 import java.util.Random;
@@ -69,7 +71,7 @@ public class GameStage extends Stage {
     private float playerScreenX = 0.0f;
 
     public GameStage(final AssetManager manager) {
-        super(new ScreenViewport());
+        super(new StretchViewport(1920f, 1080f));
 
         this.manager = manager;
 
@@ -144,7 +146,7 @@ public class GameStage extends Stage {
         currentLevel = new Level();
         currentLevel.chapter = 1;
 
-        int wallX = 1000;
+        int wallX = (int) (Gdx.graphics.getWidth() * 0.75f);
         for(int i=0; i<3; ++i) {
             EnemySpawnWall spawnWall = new EnemySpawnWall();
             spawnWall.spawnWallX = wallX;
@@ -167,7 +169,7 @@ public class GameStage extends Stage {
 
             currentLevel.enemySpawnWallList.add(spawnWall);
 
-            wallX += 1000;
+            wallX += (int) (Gdx.graphics.getWidth() * 0.75f);
         }
     }
 
@@ -195,7 +197,7 @@ public class GameStage extends Stage {
             }
         }
         else if(shouldScrollCamera(playerScreenX)) {
-            float shiftX = playerScreenX - (getWidth() * SCROLL_SCREEN_PERCENT_TRIGGER);
+            float shiftX = playerScreenX - (Gdx.graphics.getWidth() * SCROLL_SCREEN_PERCENT_TRIGGER);
             getCamera().translate(shiftX, 0.0f, 0.0f);
             touchPoint.x += shiftX;
             player.moveTo(screenToStageCoordinates(touchPoint));
@@ -211,7 +213,7 @@ public class GameStage extends Stage {
             if(entity instanceof Enemy) {
                 Enemy enemy = (Enemy) entity;
                 if(player.getCollisionArea().overlaps(enemy.getCollisionArea())) {
-                    chain.detachTail();
+                    if(chain.isAttached()) chain.detachTail();
                     player.takeDamage();
                 }
             }
@@ -224,7 +226,7 @@ public class GameStage extends Stage {
     }
 
     public boolean shouldScrollCamera(float x) {
-        return playerScreenX > getWidth() * SCROLL_SCREEN_PERCENT_TRIGGER;
+        return playerScreenX > Gdx.graphics.getWidth() * SCROLL_SCREEN_PERCENT_TRIGGER;
     }
 
     public boolean triggerSpawnWall(float x) {
@@ -244,13 +246,13 @@ public class GameStage extends Stage {
         for(EnemySpawn spawn : spawnList) {
             Enemy newEnemy = new Enemy(manager);
             Vector2 spawnPoint = new Vector2();
-            spawnPoint.y = offsetY + random.nextInt((int) (getHeight() / spawnList.size()));
+            spawnPoint.y = offsetY + random.nextInt(Gdx.graphics.getHeight() / spawnList.size());
             switch (spawn.location) {
                 case FRONT:
-                    spawnPoint.x = getWidth() - 300;
+                    spawnPoint.x = Gdx.graphics.getWidth() * 0.8f;
                     break;
                 case BACK:
-                    spawnPoint.x = 50;
+                    spawnPoint.x = Gdx.graphics.getWidth() * 0.15f;
                     break;
             }
 
@@ -262,26 +264,6 @@ public class GameStage extends Stage {
 
             offsetY += (int) (getHeight() / spawnList.size());
         }
-    }
-
-    public void spawnEnemy(EnemySpawn spawn) {
-        Enemy newEnemy = new Enemy(manager);
-        Vector2 spawnPoint = new Vector2();
-        spawnPoint.y = random.nextInt((int)(getHeight()-newEnemy.getHeight()));
-        switch (spawn.location) {
-            case FRONT:
-                spawnPoint.x = getWidth() - 300;
-                break;
-            case BACK:
-                spawnPoint.x = 50;
-                break;
-        }
-
-        screenToStageCoordinates(spawnPoint);
-        newEnemy.setPosition(spawnPoint.x, spawnPoint.y);
-        newEnemy.setColor(1.0f, 1.0f, 1.0f, 0.0f);
-        newEnemy.addAction(Actions.fadeIn(0.5f));
-        addActor(newEnemy);
     }
 
     public boolean allOnscreenEnemiesDefeated() {

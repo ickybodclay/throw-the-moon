@@ -102,7 +102,7 @@ public class MoonChain extends Actor {
 
     public void detachTail() {
         attachedPlayer = null;
-        addAction(Actions.moveTo(-50, getY(), 8f, Interpolation.fade));
+        addAction(Actions.moveTo(-50, getY(), 12f, Interpolation.fade));
     }
 
     public boolean isAttached() {
