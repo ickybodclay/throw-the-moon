@@ -83,16 +83,16 @@ public class GameStage extends Stage {
         addActor(chain);
 
         player = new Player(manager);
-        player.setX(100);
-        player.setY(300);
+        player.setX(getWidth() / 4);
+        player.setY(getHeight() / 3);
         addActor(player);
 
         chain.attachTail(player);
 
-        moon = new Moon(manager);
-        moon.setX(100);
-        moon.setY(800);
-        addActor(moon);
+        //moon = new Moon(manager);
+        //moon.setX(100);
+        //moon.setY(800);
+        //addActor(moon);
 
         touchPoint = new Vector2();
 
@@ -143,24 +143,31 @@ public class GameStage extends Stage {
         currentLevel = new Level();
         currentLevel.chapter = 1;
 
-        EnemySpawnWall spawnWall = new EnemySpawnWall();
-        spawnWall.spawnWallX = 1000;
-
+        int wallX = 1000;
         for(int i=0; i<3; ++i) {
-            EnemySpawn spawn = new EnemySpawn();
-            spawn.enemyId = 0;
-            spawn.location = SpawnLocation.FRONT;
-            spawnWall.enemySpawnList.add(spawn);
-        }
+            EnemySpawnWall spawnWall = new EnemySpawnWall();
+            spawnWall.spawnWallX = wallX;
 
-        for(int i=0; i<2; ++i) {
-            EnemySpawn spawn = new EnemySpawn();
-            spawn.enemyId = 0;
-            spawn.location = SpawnLocation.BACK;
-            spawnWall.enemySpawnList.add(spawn);
-        }
+            for(int j=0; j<3; ++j) {
+                EnemySpawn spawn = new EnemySpawn();
+                spawn.enemyId = 0;
+                spawn.location = SpawnLocation.FRONT;
+                spawnWall.enemySpawnList.add(spawn);
+            }
 
-        currentLevel.enemySpawnWallList.add(spawnWall);
+            if(i % 2 == 1) {
+                for(int j=0; j<2; ++j) {
+                    EnemySpawn spawn = new EnemySpawn();
+                    spawn.enemyId = 0;
+                    spawn.location = SpawnLocation.BACK;
+                    spawnWall.enemySpawnList.add(spawn);
+                }
+            }
+
+            currentLevel.enemySpawnWallList.add(spawnWall);
+
+            wallX += 1000;
+        }
     }
 
     @Override
@@ -169,7 +176,7 @@ public class GameStage extends Stage {
 
         playerScreenX = stageToScreenCoordinates(player.getPosition()).x;
 
-        if(triggerSpawnWall(playerScreenX)) {
+        if(triggerSpawnWall(player.getX())) {
             for(EnemySpawn spawn : currentLevel.enemySpawnWallList.get(wallIndex).enemySpawnList) {
                 spawnEnemy(spawn);
             }
