@@ -26,14 +26,15 @@ package broken.shotgun.throwthemoon.stages;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.assets.loaders.MusicLoader;
+import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.utils.ActorGestureListener;
-import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 
 import java.util.List;
@@ -52,6 +53,7 @@ import broken.shotgun.throwthemoon.models.SpawnLocation;
 import static broken.shotgun.throwthemoon.ThrowTheMoonGame.isDebug;
 
 public class GameStage extends Stage {
+    private static final String MUSIC_FILENAME = "SnestedLoops.ogg";
     private boolean debug;
 
     private final AssetManager manager;
@@ -65,6 +67,8 @@ public class GameStage extends Stage {
     private Moon moon;
     private MoonChain chain;
 
+    private Music music;
+
     private final Vector2 touchPoint;
 
     private static final float SCROLL_SCREEN_PERCENT_TRIGGER = 0.6f;
@@ -76,6 +80,8 @@ public class GameStage extends Stage {
         this.manager = manager;
 
         loadLevel();
+
+        loadMusic();
 
         random = new Random(System.currentTimeMillis());
 
@@ -140,6 +146,16 @@ public class GameStage extends Stage {
                 super.tap(event, x, y, count, button);
             }
         });
+    }
+
+    private void loadMusic() {
+        manager.setLoader(Music.class, new MusicLoader(new InternalFileHandleResolver()));
+        manager.load(MUSIC_FILENAME, Music.class);
+        manager.finishLoading();
+
+        music = manager.get(MUSIC_FILENAME);
+        music.setLooping(true);
+        music.play();
     }
 
     private void loadLevel() {
