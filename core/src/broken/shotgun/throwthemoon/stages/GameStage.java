@@ -258,11 +258,11 @@ public class GameStage extends Stage {
     }
 
     public void spawnEnemies(List<EnemySpawn> spawnList) {
-        int offsetY = 0;
+        int offsetY = 100;
         for(EnemySpawn spawn : spawnList) {
             Enemy newEnemy = new Enemy(manager);
             Vector2 spawnPoint = new Vector2();
-            spawnPoint.y = offsetY + random.nextInt(Gdx.graphics.getHeight() / spawnList.size());
+            spawnPoint.y = offsetY + random.nextInt((int) newEnemy.getHeight());
             switch (spawn.location) {
                 case FRONT:
                     spawnPoint.x = Gdx.graphics.getWidth() * 0.8f;
@@ -278,7 +278,7 @@ public class GameStage extends Stage {
             newEnemy.addAction(Actions.fadeIn(0.5f));
             addActor(newEnemy);
 
-            offsetY += (int) (getHeight() / spawnList.size());
+            offsetY += 100;
         }
     }
 
