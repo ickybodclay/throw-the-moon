@@ -32,6 +32,7 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.utils.ActorGestureListener;
@@ -139,11 +140,23 @@ public class GameStage extends Stage {
 
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
-                player.performAttack(event, count);
+                player.performAttack(count);
 
                 if (isDebug())
                     Gdx.app.log("GameStage", String.format("tap type:%s target:%s count:%d", event.getType().toString(), event.getTarget().toString(), count));
                 super.tap(event, x, y, count, button);
+            }
+        });
+
+        addListener(new InputListener() {
+            @Override
+            public boolean keyDown(InputEvent event, int keycode) {
+                return super.keyDown(event, keycode);
+            }
+
+            @Override
+            public boolean keyUp(InputEvent event, int keycode) {
+                return super.keyUp(event, keycode);
             }
         });
     }
@@ -231,6 +244,10 @@ public class GameStage extends Stage {
                 if(player.getCollisionArea().overlaps(enemy.getCollisionArea())) {
                     if(chain.isAttached()) chain.detachTail();
                     player.takeDamage();
+                }
+                if(enemy.getCollisionArea().overlaps(player.getAttackArea())) {
+                    enemy.takeDamage();
+                    player.clearAttackArea();
                 }
             }
             if(entity instanceof MoonChain && !((MoonChain) entity).isAttached() && !player.isTakingDamage()) {

@@ -199,24 +199,16 @@ public class Player extends Actor {
         return position.set(getX(), getY());
     }
 
-    public void performAttack(InputEvent event, int count) {
+    public void performAttack(int count) {
         if(takingDamage) return;
 
-        flipX = getX() + getOriginX() > event.getStageX();
         stateTime = 0.0f;
         state = State.ATTACK;
         currentAttackKeyFrame =
             count % 5 == 0 ? 2 :
             count % 2 == 0 ? 1 :
             0;
-        attackArea.set(getX() + (flipX ? -50 : (int)(getWidth() - 50)), getY() + (int)(getHeight() / 2) - 50, 100, 100);
-
-        if(event.getTarget() instanceof Enemy) {
-            Enemy target = (Enemy)event.getTarget();
-            if(attackArea.overlaps(target.getCollisionArea())) {
-                target.takeDamage();
-            }
-        }
+        attackArea.set(getX() + (flipX ? -50 : (int)(getWidth() - 50)), getY() + (int)(getHeight() / 2) - 100, 100, 150);
     }
 
     public boolean isWalking() {
@@ -225,6 +217,14 @@ public class Player extends Actor {
 
     public Rectangle getCollisionArea() {
         return collisionArea;
+    }
+
+    public Rectangle getAttackArea() {
+        return attackArea;
+    }
+
+    public void clearAttackArea() {
+        attackArea.set(0, 0, 0, 0);
     }
 
     public boolean isTakingDamage() {
