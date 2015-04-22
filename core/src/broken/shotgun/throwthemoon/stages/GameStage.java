@@ -29,6 +29,7 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.MusicLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -248,8 +249,7 @@ public class GameStage extends Stage {
         handleCollisions();
 
         if(isChainOffscreen()) {
-            player.die();
-            // TODO show game over
+            startGameOver();
         }
         else if(triggerSpawnWall(player.getX())) {
             spawnEnemies(currentLevel.enemySpawnWallList.get(wallIndex).enemySpawnList);
@@ -268,6 +268,11 @@ public class GameStage extends Stage {
             touchPoint.x += shiftX;
             player.moveTo(screenToStageCoordinates(touchPoint));
         }
+    }
+
+    private void startGameOver() {
+        player.die();
+        music.stop();
     }
 
     private boolean isChainOffscreen() {
@@ -362,5 +367,37 @@ public class GameStage extends Stage {
                 break;
         }
         return super.keyDown(keyCode);
+    }
+
+    public boolean isGameOver() {
+        return player.getStage() == null;
+    }
+
+    public void restartLevel() {
+        getActors().clear();
+        addActor(background);
+        addActor(chain);
+
+        // reset player position and add back to stage
+        player.setX(getWidth() / 4);
+        player.setY(getHeight() / 3);
+        player.reset();
+        addActor(player);
+
+        playerScreenX = 0.0f;
+
+        getCamera().position.set(getWidth() / 2, getHeight() / 2, 0);
+
+        chain.attachTail(player);
+
+        touchPoint.set(0, 0);
+
+        for(EnemySpawnWall wall : currentLevel.enemySpawnWallList) {
+            wall.triggered = false;
+            wall.destroyed = false;
+        }
+        wallIndex = 0;
+
+        music.play();
     }
 }

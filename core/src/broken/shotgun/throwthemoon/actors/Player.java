@@ -65,7 +65,6 @@ public class Player extends Actor {
 
     private TextureRegion currentFrame;
 
-
     private enum State {
         IDLE,
         WALK,
@@ -107,11 +106,23 @@ public class Player extends Actor {
         currentFrame = idle.getKeyFrame(0.0f);
 
         moveTarget = new Vector2(-1, -1);
-        position = new Vector2();
-        velocity = new Vector2();
+        position = new Vector2(getX(), getY());
+        velocity = new Vector2(0, 0);
 
         collisionArea = new Rectangle(50, 0, (int)getWidth() - 100, (int)getHeight());
         attackArea = new Rectangle(0, 0, 0, 0);
+    }
+
+    public void reset() {
+        clearActions();
+        setColor(Color.WHITE);
+        state = State.IDLE;
+        moveTarget.set(-1, -1);
+        position.set(getX(), getY());
+        velocity.set(0, 0);
+        attackArea.set(0, 0, 0, 0);
+        takingDamage = false;
+        stateTime = 0f;
     }
 
     @Override
