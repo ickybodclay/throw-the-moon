@@ -25,19 +25,19 @@
 package broken.shotgun.throwthemoon.actors;
 
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.assets.loaders.SoundLoader;
 import com.badlogic.gdx.assets.loaders.TextureLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
 
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.color;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
@@ -47,6 +47,8 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 
 public class Player extends Actor {
     private static final String TEXTURE_FILENAME = "camacho.png";
+    private static final String SFX_HIT_FILENAME = "sfx/hit.wav";
+    private static final String SFX_DIE_FILENAME = "sfx/death.wav";
     private static final float MOVEMENT_DEAD_ZONE = 10.0f;
     private static final int FRAME_WIDTH = 256;
     private static final int FRAME_HEIGHT = 256;
@@ -54,6 +56,8 @@ public class Player extends Actor {
 
     private final Texture texture;
     private final TextureRegion[] textureRegions;
+    private final Sound hitSfx;
+    private final Sound dieSfx;
 
     private final Animation idle;
     private final Animation walk;
@@ -74,6 +78,7 @@ public class Player extends Actor {
     private State state;
     private final Vector2 moveTarget;
     private final Vector2 position;
+    public final Vector2 velocity;
 
     private float speed = 500.0f;
 
@@ -82,7 +87,10 @@ public class Player extends Actor {
 
     public Player(final AssetManager manager) {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
+        manager.setLoader(Sound.class, new SoundLoader(new InternalFileHandleResolver()));
         manager.load(TEXTURE_FILENAME, Texture.class);
+        manager.load(SFX_HIT_FILENAME, Sound.class);
+        manager.load(SFX_DIE_FILENAME, Sound.class);
         manager.finishLoading();
 
         texture = manager.get(TEXTURE_FILENAME);
@@ -97,6 +105,9 @@ public class Player extends Actor {
         attack = new Animation(0.3f, textureRegions[5], textureRegions[6], textureRegions[7]);
         attack.setPlayMode(Animation.PlayMode.NORMAL);
 
+        hitSfx = manager.get(SFX_HIT_FILENAME);
+        dieSfx = manager.get(SFX_DIE_FILENAME);
+
         setWidth(FRAME_WIDTH);
         setHeight(FRAME_HEIGHT);
         setOrigin(getWidth() / 2, getHeight() / 2);
@@ -104,11 +115,24 @@ public class Player extends Actor {
         state = State.IDLE;
         currentFrame = idle.getKeyFrame(0.0f);
 
-        moveTarget = new Vector2();
-        position = new Vector2();
+        moveTarget = new Vector2(-1, -1);
+        position = new Vector2(getX(), getY());
+        velocity = new Vector2(0, 0);
 
         collisionArea = new Rectangle(50, 0, (int)getWidth() - 100, (int)getHeight());
         attackArea = new Rectangle(0, 0, 0, 0);
+    }
+
+    public void reset() {
+        clearActions();
+        setColor(Color.WHITE);
+        state = State.IDLE;
+        moveTarget.set(-1, -1);
+        position.set(getX(), getY());
+        velocity.set(0, 0);
+        attackArea.set(0, 0, 0, 0);
+        takingDamage = false;
+        stateTime = 0f;
     }
 
     @Override
@@ -144,7 +168,16 @@ public class Player extends Actor {
         float deltaX = (getX() + getOriginX()) - moveTarget.x;
         float deltaY = (getY() + getOriginY()) - moveTarget.y;
 
-        if(Math.abs(deltaX) > MOVEMENT_DEAD_ZONE || Math.abs(deltaY) > MOVEMENT_DEAD_ZONE) {
+        if(velocity.x != 0 || velocity.y != 0) {
+            setX(getX() + velocity.x);
+            setY(getY() + velocity.y);
+
+            collisionArea.setPosition(getX() + 50, getY());
+
+            if(velocity.x != 0) flipX = velocity.x < 0;
+        }
+        else if((moveTarget.x != -1 && moveTarget.y != -1) &&
+                (Math.abs(deltaX) > MOVEMENT_DEAD_ZONE || Math.abs(deltaY) > MOVEMENT_DEAD_ZONE)) {
             double angle = (float)Math.atan2(deltaY, deltaX) * 180 / Math.PI;
 
             float moveX = (float) (Math.cos(angle * Math.PI / 180) * speed) * delta;
@@ -193,42 +226,49 @@ public class Player extends Actor {
 
     public void stop() {
         state = State.IDLE;
+        velocity.set(0, 0);
+        moveTarget.set(-1, -1);
     }
 
-    public Vector2 getPosition() {
-        return position.set(getX(), getY());
-    }
-
-    public void performAttack(InputEvent event, int count) {
+    public void performAttack(int count) {
         if(takingDamage) return;
 
-        flipX = getX() + getOriginX() > event.getStageX();
         stateTime = 0.0f;
         state = State.ATTACK;
         currentAttackKeyFrame =
             count % 5 == 0 ? 2 :
             count % 2 == 0 ? 1 :
             0;
-        attackArea.set(getX() + (flipX ? -50 : (int)(getWidth() - 50)), getY() + (int)(getHeight() / 2) - 50, 100, 100);
-
-        if(event.getTarget() instanceof Enemy) {
-            Enemy target = (Enemy)event.getTarget();
-            if(attackArea.overlaps(target.getCollisionArea())) {
-                target.takeDamage();
-            }
-        }
+        attackArea.set(getX() + (flipX ? -50 : (int)(getWidth() - 50)), getY() + (int)(getHeight() / 2) - 100, 100, 150);
     }
 
     public boolean isWalking() {
         return state == State.WALK;
     }
 
+    public Vector2 getPosition() {
+        return position.set(getX(), getY());
+    }
+
     public Rectangle getCollisionArea() {
         return collisionArea;
     }
 
+    public Rectangle getAttackArea() {
+        return attackArea;
+    }
+
+    public void clearAttackArea() {
+        attackArea.set(0, 0, 0, 0);
+    }
+
     public boolean isTakingDamage() {
         return takingDamage;
+    }
+
+    public void startWalkState() {
+        state = State.WALK;
+        moveTarget.set(-1, -1);
     }
 
     public void takeDamage() {
@@ -236,19 +276,23 @@ public class Player extends Actor {
 
         takingDamage = true;
 
+        hitSfx.play();
+
         addAction(
-            sequence(
-                    sequence(color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f), color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f), color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f)),
-                    run(new Runnable() {
-                        @Override
-                        public void run() {
-                            takingDamage = false;
-                        }
-                    })
-            ));
+                sequence(
+                        sequence(color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f), color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f), color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f)),
+                        run(new Runnable() {
+                            @Override
+                            public void run() {
+                                takingDamage = false;
+                            }
+                        })
+                ));
     }
 
     public void die() {
+        dieSfx.play();
+
         addAction(
             sequence(
                 color(Color.RED, 4f),

@@ -26,13 +26,18 @@ package broken.shotgun.throwthemoon.stages;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.assets.loaders.MusicLoader;
+import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.utils.ActorGestureListener;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.utils.viewport.StretchViewport;
 
 import java.util.List;
 import java.util.Random;
@@ -50,6 +55,7 @@ import broken.shotgun.throwthemoon.models.SpawnLocation;
 import static broken.shotgun.throwthemoon.ThrowTheMoonGame.isDebug;
 
 public class GameStage extends Stage {
+    private static final String MUSIC_FILENAME = "SnestedLoops.ogg";
     private boolean debug;
 
     private final AssetManager manager;
@@ -63,17 +69,21 @@ public class GameStage extends Stage {
     private Moon moon;
     private MoonChain chain;
 
+    private Music music;
+
     private final Vector2 touchPoint;
 
     private static final float SCROLL_SCREEN_PERCENT_TRIGGER = 0.6f;
     private float playerScreenX = 0.0f;
 
     public GameStage(final AssetManager manager) {
-        super(new ScreenViewport());
+        super(new StretchViewport(1920f, 1080f));
 
         this.manager = manager;
 
         loadLevel();
+
+        loadMusic();
 
         random = new Random(System.currentTimeMillis());
 
@@ -109,8 +119,9 @@ public class GameStage extends Stage {
                     player.moveTo(touchPoint.set(x, y));
                 }
 
-                if (isDebug())
-                    Gdx.app.log("GameStage", String.format("touchDown %s %s", event.getType().toString(), event.getTarget().toString()));
+                // FIXME replace String.format with StringBuilder for HTML
+                //if (isDebug())
+                //    Gdx.app.log("GameStage", String.format("touchDown %s %s", event.getType().toString(), event.getTarget().toString()));
                 super.touchDown(event, x, y, pointer, button);
             }
 
@@ -131,20 +142,78 @@ public class GameStage extends Stage {
 
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
-                player.performAttack(event, count);
+                player.performAttack(count);
 
-                if (isDebug())
-                    Gdx.app.log("GameStage", String.format("tap type:%s target:%s count:%d", event.getType().toString(), event.getTarget().toString(), count));
+                // FIXME replace String.format with StringBuilder for HTML
+                //if (isDebug())
+                //    Gdx.app.log("GameStage", String.format("tap type:%s target:%s count:%d", event.getType().toString(), event.getTarget().toString(), count));
                 super.tap(event, x, y, count, button);
             }
         });
+
+        addListener(new InputListener() {
+            int attackCounter = 0;
+
+            @Override
+            public boolean keyDown(InputEvent event, int keycode) {
+                switch (keycode) {
+                    case Input.Keys.SPACE:
+                        attackCounter++;
+                        player.performAttack(attackCounter);
+                        return true;
+                    case Input.Keys.LEFT:
+                        player.velocity.x = -7;
+                        player.startWalkState();
+                        return true;
+                    case Input.Keys.RIGHT:
+                        player.velocity.x = 7;
+                        player.startWalkState();
+                        return true;
+                    case Input.Keys.UP:
+                        player.velocity.y = 7;
+                        player.startWalkState();
+                        return true;
+                    case Input.Keys.DOWN:
+                        player.velocity.y = -7;
+                        player.startWalkState();
+                        return true;
+                }
+
+                return super.keyDown(event, keycode);
+            }
+
+            @Override
+            public boolean keyUp(InputEvent event, int keycode) {
+                switch (keycode) {
+                    case Input.Keys.LEFT:
+                    case Input.Keys.RIGHT:
+                        player.velocity.x = 0;
+                        return true;
+                    case Input.Keys.UP:
+                    case Input.Keys.DOWN:
+                        player.velocity.y = 0;
+                        return true;
+                }
+                return super.keyUp(event, keycode);
+            }
+        });
+    }
+
+    private void loadMusic() {
+        manager.setLoader(Music.class, new MusicLoader(new InternalFileHandleResolver()));
+        manager.load(MUSIC_FILENAME, Music.class);
+        manager.finishLoading();
+
+        music = manager.get(MUSIC_FILENAME);
+        music.setLooping(true);
+        music.play();
     }
 
     private void loadLevel() {
         currentLevel = new Level();
         currentLevel.chapter = 1;
 
-        int wallX = 1000;
+        int wallX = (int) (Gdx.graphics.getWidth() * 0.75f);
         for(int i=0; i<3; ++i) {
             EnemySpawnWall spawnWall = new EnemySpawnWall();
             spawnWall.spawnWallX = wallX;
@@ -167,7 +236,7 @@ public class GameStage extends Stage {
 
             currentLevel.enemySpawnWallList.add(spawnWall);
 
-            wallX += 1000;
+            wallX += (int) (Gdx.graphics.getWidth() * 0.75f);
         }
     }
 
@@ -180,8 +249,7 @@ public class GameStage extends Stage {
         handleCollisions();
 
         if(isChainOffscreen()) {
-            player.die();
-            // TODO show game over
+            startGameOver();
         }
         else if(triggerSpawnWall(player.getX())) {
             spawnEnemies(currentLevel.enemySpawnWallList.get(wallIndex).enemySpawnList);
@@ -195,11 +263,14 @@ public class GameStage extends Stage {
             }
         }
         else if(shouldScrollCamera(playerScreenX)) {
-            float shiftX = playerScreenX - (getWidth() * SCROLL_SCREEN_PERCENT_TRIGGER);
+            float shiftX = playerScreenX - (Gdx.graphics.getWidth() * SCROLL_SCREEN_PERCENT_TRIGGER);
             getCamera().translate(shiftX, 0.0f, 0.0f);
-            touchPoint.x += shiftX;
-            player.moveTo(screenToStageCoordinates(touchPoint));
         }
+    }
+
+    private void startGameOver() {
+        player.die();
+        music.stop();
     }
 
     private boolean isChainOffscreen() {
@@ -211,8 +282,12 @@ public class GameStage extends Stage {
             if(entity instanceof Enemy) {
                 Enemy enemy = (Enemy) entity;
                 if(player.getCollisionArea().overlaps(enemy.getCollisionArea())) {
-                    chain.detachTail();
+                    if(chain.isAttached()) chain.detachTail();
                     player.takeDamage();
+                }
+                if(enemy.getCollisionArea().overlaps(player.getAttackArea())) {
+                    enemy.takeDamage();
+                    player.clearAttackArea();
                 }
             }
             if(entity instanceof MoonChain && !((MoonChain) entity).isAttached() && !player.isTakingDamage()) {
@@ -224,7 +299,7 @@ public class GameStage extends Stage {
     }
 
     public boolean shouldScrollCamera(float x) {
-        return playerScreenX > getWidth() * SCROLL_SCREEN_PERCENT_TRIGGER;
+        return playerScreenX > Gdx.graphics.getWidth() * SCROLL_SCREEN_PERCENT_TRIGGER;
     }
 
     public boolean triggerSpawnWall(float x) {
@@ -240,17 +315,17 @@ public class GameStage extends Stage {
     }
 
     public void spawnEnemies(List<EnemySpawn> spawnList) {
-        int offsetY = 0;
+        int offsetY = 100;
         for(EnemySpawn spawn : spawnList) {
             Enemy newEnemy = new Enemy(manager);
             Vector2 spawnPoint = new Vector2();
-            spawnPoint.y = offsetY + random.nextInt((int) (getHeight() / spawnList.size()));
+            spawnPoint.y = offsetY + random.nextInt((int) newEnemy.getHeight());
             switch (spawn.location) {
                 case FRONT:
-                    spawnPoint.x = getWidth() - 300;
+                    spawnPoint.x = Gdx.graphics.getWidth() * 0.8f;
                     break;
                 case BACK:
-                    spawnPoint.x = 50;
+                    spawnPoint.x = Gdx.graphics.getWidth() * 0.15f;
                     break;
             }
 
@@ -260,28 +335,8 @@ public class GameStage extends Stage {
             newEnemy.addAction(Actions.fadeIn(0.5f));
             addActor(newEnemy);
 
-            offsetY += (int) (getHeight() / spawnList.size());
+            offsetY += 100;
         }
-    }
-
-    public void spawnEnemy(EnemySpawn spawn) {
-        Enemy newEnemy = new Enemy(manager);
-        Vector2 spawnPoint = new Vector2();
-        spawnPoint.y = random.nextInt((int)(getHeight()-newEnemy.getHeight()));
-        switch (spawn.location) {
-            case FRONT:
-                spawnPoint.x = getWidth() - 300;
-                break;
-            case BACK:
-                spawnPoint.x = 50;
-                break;
-        }
-
-        screenToStageCoordinates(spawnPoint);
-        newEnemy.setPosition(spawnPoint.x, spawnPoint.y);
-        newEnemy.setColor(1.0f, 1.0f, 1.0f, 0.0f);
-        newEnemy.addAction(Actions.fadeIn(0.5f));
-        addActor(newEnemy);
     }
 
     public boolean allOnscreenEnemiesDefeated() {
@@ -310,5 +365,37 @@ public class GameStage extends Stage {
                 break;
         }
         return super.keyDown(keyCode);
+    }
+
+    public boolean isGameOver() {
+        return player.getStage() == null;
+    }
+
+    public void restartLevel() {
+        getActors().clear();
+        addActor(background);
+        addActor(chain);
+
+        // reset player position and add back to stage
+        player.setX(getWidth() / 4);
+        player.setY(getHeight() / 3);
+        player.reset();
+        addActor(player);
+
+        playerScreenX = 0.0f;
+
+        getCamera().position.set(getWidth() / 2, getHeight() / 2, 0);
+
+        chain.attachTail(player);
+
+        touchPoint.set(0, 0);
+
+        for(EnemySpawnWall wall : currentLevel.enemySpawnWallList) {
+            wall.triggered = false;
+            wall.destroyed = false;
+        }
+        wallIndex = 0;
+
+        music.play();
     }
 }

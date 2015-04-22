@@ -24,8 +24,10 @@
 package broken.shotgun.throwthemoon.actors;
 
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.assets.loaders.SoundLoader;
 import com.badlogic.gdx.assets.loaders.TextureLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -48,14 +50,18 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 
 public class Enemy extends Actor {
     private static final String TEXTURE_FILENAME = "enemy.png";
+    private static final String SFX_HIT_FILENAME = "sfx/enemy_hit.wav";
     private static final int FRAME_WIDTH = 256;
     private static final int FRAME_HEIGHT = 256;
 
-    private Texture texture;
-    private TextureRegion[] regions;
+    private final Texture texture;
+    private final TextureRegion[] regions;
 
-    private Animation idle;
+    private final Animation idle;
     private TextureRegion currentFrame;
+
+    private final Sound hitSfx;
+
     private float stateTime = 0.0f;
 
     private final Rectangle collisionArea;
@@ -63,14 +69,18 @@ public class Enemy extends Actor {
     private int health;
 
     public Enemy(AssetManager manager) {
-        manager.setLoader(com.badlogic.gdx.graphics.Texture.class, new TextureLoader(new InternalFileHandleResolver()));
-        manager.load(TEXTURE_FILENAME, com.badlogic.gdx.graphics.Texture.class);
+        manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
+        manager.setLoader(Sound.class, new SoundLoader(new InternalFileHandleResolver()));
+        manager.load(TEXTURE_FILENAME, Texture.class);
+        manager.load(SFX_HIT_FILENAME, Sound.class);
         manager.finishLoading();
 
         texture = manager.get(TEXTURE_FILENAME);
         regions = TextureRegion.split(texture, FRAME_WIDTH, FRAME_HEIGHT)[0];
         idle = new Animation(0.1f, regions[0], regions[1], regions[2]);
         idle.setPlayMode(Animation.PlayMode.LOOP);
+
+        hitSfx = manager.get(SFX_HIT_FILENAME);
 
         currentFrame = idle.getKeyFrame(0.0f);
 
@@ -113,6 +123,8 @@ public class Enemy extends Actor {
 
     public void takeDamage() {
         health--;
+
+        hitSfx.play();
 
         if (health <= 0) {
             die();

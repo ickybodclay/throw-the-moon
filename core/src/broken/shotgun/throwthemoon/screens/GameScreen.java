@@ -30,15 +30,18 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 
+import broken.shotgun.throwthemoon.ThrowTheMoonGame;
 import broken.shotgun.throwthemoon.stages.GameStage;
 
 public class GameScreen implements Screen {
     private final AssetManager manager;
     private final GameStage stage;
+    private final ThrowTheMoonGame game;
 
-    public GameScreen() {
-        manager = new AssetManager();
-        stage = new GameStage(manager);
+    public GameScreen(final ThrowTheMoonGame game) {
+        this.game = game;
+        this.manager = new AssetManager();
+        this.stage = new GameStage(manager);
     }
 
     @Override
@@ -53,6 +56,10 @@ public class GameScreen implements Screen {
 
         stage.draw();
         stage.act(delta);
+
+        if(stage.isGameOver()) {
+            stage.restartLevel();
+        }
     }
 
     @Override
