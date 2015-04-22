@@ -25,19 +25,19 @@
 package broken.shotgun.throwthemoon.actors;
 
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.assets.loaders.SoundLoader;
 import com.badlogic.gdx.assets.loaders.TextureLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
 
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.color;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
@@ -47,6 +47,8 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 
 public class Player extends Actor {
     private static final String TEXTURE_FILENAME = "camacho.png";
+    private static final String SFX_HIT_FILENAME = "sfx/hit.wav";
+    private static final String SFX_DIE_FILENAME = "sfx/death.wav";
     private static final float MOVEMENT_DEAD_ZONE = 10.0f;
     private static final int FRAME_WIDTH = 256;
     private static final int FRAME_HEIGHT = 256;
@@ -54,6 +56,8 @@ public class Player extends Actor {
 
     private final Texture texture;
     private final TextureRegion[] textureRegions;
+    private final Sound hitSfx;
+    private final Sound dieSfx;
 
     private final Animation idle;
     private final Animation walk;
@@ -83,7 +87,10 @@ public class Player extends Actor {
 
     public Player(final AssetManager manager) {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
+        manager.setLoader(Sound.class, new SoundLoader(new InternalFileHandleResolver()));
         manager.load(TEXTURE_FILENAME, Texture.class);
+        manager.load(SFX_HIT_FILENAME, Sound.class);
+        manager.load(SFX_DIE_FILENAME, Sound.class);
         manager.finishLoading();
 
         texture = manager.get(TEXTURE_FILENAME);
@@ -97,6 +104,9 @@ public class Player extends Actor {
 
         attack = new Animation(0.3f, textureRegions[5], textureRegions[6], textureRegions[7]);
         attack.setPlayMode(Animation.PlayMode.NORMAL);
+
+        hitSfx = manager.get(SFX_HIT_FILENAME);
+        dieSfx = manager.get(SFX_DIE_FILENAME);
 
         setWidth(FRAME_WIDTH);
         setHeight(FRAME_HEIGHT);
@@ -266,19 +276,23 @@ public class Player extends Actor {
 
         takingDamage = true;
 
+        hitSfx.play();
+
         addAction(
-            sequence(
-                    sequence(color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f), color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f), color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f)),
-                    run(new Runnable() {
-                        @Override
-                        public void run() {
-                            takingDamage = false;
-                        }
-                    })
-            ));
+                sequence(
+                        sequence(color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f), color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f), color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f)),
+                        run(new Runnable() {
+                            @Override
+                            public void run() {
+                                takingDamage = false;
+                            }
+                        })
+                ));
     }
 
     public void die() {
+        dieSfx.play();
+
         addAction(
             sequence(
                 color(Color.RED, 4f),
