@@ -68,7 +68,7 @@ public class Enemy extends Actor {
 
     private int health;
 
-    public Enemy(AssetManager manager) {
+    public Enemy(final AssetManager manager) {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
         manager.setLoader(Sound.class, new SoundLoader(new InternalFileHandleResolver()));
         manager.load(TEXTURE_FILENAME, Texture.class);
@@ -121,7 +121,7 @@ public class Enemy extends Actor {
         return collisionArea;
     }
 
-    public void takeDamage() {
+    public void takeDamage(int direction) {
         health--;
 
         hitSfx.play();
@@ -134,7 +134,7 @@ public class Enemy extends Actor {
         addAction(
             sequence(
                 parallel(
-                    Actions.moveBy(20, 0, 0.3f, Interpolation.circleOut), sequence(color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f))),
+                    Actions.moveBy(20 * direction, 0, 0.3f, Interpolation.circleOut), sequence(color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f))),
                     Actions.moveTo(getX(), getY(), 0.1f, Interpolation.circleIn)));
     }
 

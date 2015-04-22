@@ -29,7 +29,6 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.MusicLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
 import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -286,7 +285,7 @@ public class GameStage extends Stage {
                     player.takeDamage();
                 }
                 if(enemy.getCollisionArea().overlaps(player.getAttackArea())) {
-                    enemy.takeDamage();
+                    enemy.takeDamage(player.getAttackArea().x < enemy.getX() + enemy.getOriginX() ? 1 : -1);
                     player.clearAttackArea();
                 }
             }
