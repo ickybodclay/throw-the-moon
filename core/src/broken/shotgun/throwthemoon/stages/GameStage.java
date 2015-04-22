@@ -118,8 +118,9 @@ public class GameStage extends Stage {
                     player.moveTo(touchPoint.set(x, y));
                 }
 
-                if (isDebug())
-                    Gdx.app.log("GameStage", String.format("touchDown %s %s", event.getType().toString(), event.getTarget().toString()));
+                // FIXME replace String.format with StringBuilder for HTML
+                //if (isDebug())
+                //    Gdx.app.log("GameStage", String.format("touchDown %s %s", event.getType().toString(), event.getTarget().toString()));
                 super.touchDown(event, x, y, pointer, button);
             }
 
@@ -142,8 +143,9 @@ public class GameStage extends Stage {
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 player.performAttack(count);
 
-                if (isDebug())
-                    Gdx.app.log("GameStage", String.format("tap type:%s target:%s count:%d", event.getType().toString(), event.getTarget().toString(), count));
+                // FIXME replace String.format with StringBuilder for HTML
+                //if (isDebug())
+                //    Gdx.app.log("GameStage", String.format("tap type:%s target:%s count:%d", event.getType().toString(), event.getTarget().toString(), count));
                 super.tap(event, x, y, count, button);
             }
         });
