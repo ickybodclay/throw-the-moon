@@ -149,13 +149,48 @@ public class GameStage extends Stage {
         });
 
         addListener(new InputListener() {
+            int attackCounter = 0;
+
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
+                switch (keycode) {
+                    case Input.Keys.SPACE:
+                        attackCounter++;
+                        player.performAttack(attackCounter);
+                        return true;
+                    case Input.Keys.LEFT:
+                        player.velocity.x = -7;
+                        player.startWalkState();
+                        return true;
+                    case Input.Keys.RIGHT:
+                        player.velocity.x = 7;
+                        player.startWalkState();
+                        return true;
+                    case Input.Keys.UP:
+                        player.velocity.y = 7;
+                        player.startWalkState();
+                        return true;
+                    case Input.Keys.DOWN:
+                        player.velocity.y = -7;
+                        player.startWalkState();
+                        return true;
+                }
+
                 return super.keyDown(event, keycode);
             }
 
             @Override
             public boolean keyUp(InputEvent event, int keycode) {
+                switch (keycode) {
+                    case Input.Keys.LEFT:
+                    case Input.Keys.RIGHT:
+                        player.velocity.x = 0;
+                        return true;
+                    case Input.Keys.UP:
+                    case Input.Keys.DOWN:
+                        player.velocity.y = 0;
+                        return true;
+                }
                 return super.keyUp(event, keycode);
             }
         });

@@ -65,6 +65,7 @@ public class Player extends Actor {
 
     private TextureRegion currentFrame;
 
+
     private enum State {
         IDLE,
         WALK,
@@ -74,6 +75,7 @@ public class Player extends Actor {
     private State state;
     private final Vector2 moveTarget;
     private final Vector2 position;
+    public final Vector2 velocity;
 
     private float speed = 500.0f;
 
@@ -104,8 +106,9 @@ public class Player extends Actor {
         state = State.IDLE;
         currentFrame = idle.getKeyFrame(0.0f);
 
-        moveTarget = new Vector2();
+        moveTarget = new Vector2(-1, -1);
         position = new Vector2();
+        velocity = new Vector2();
 
         collisionArea = new Rectangle(50, 0, (int)getWidth() - 100, (int)getHeight());
         attackArea = new Rectangle(0, 0, 0, 0);
@@ -144,7 +147,16 @@ public class Player extends Actor {
         float deltaX = (getX() + getOriginX()) - moveTarget.x;
         float deltaY = (getY() + getOriginY()) - moveTarget.y;
 
-        if(Math.abs(deltaX) > MOVEMENT_DEAD_ZONE || Math.abs(deltaY) > MOVEMENT_DEAD_ZONE) {
+        if(velocity.x != 0 || velocity.y != 0) {
+            setX(getX() + velocity.x);
+            setY(getY() + velocity.y);
+
+            collisionArea.setPosition(getX() + 50, getY());
+
+            if(velocity.x != 0) flipX = velocity.x < 0;
+        }
+        else if((moveTarget.x != -1 && moveTarget.y != -1) &&
+                (Math.abs(deltaX) > MOVEMENT_DEAD_ZONE || Math.abs(deltaY) > MOVEMENT_DEAD_ZONE)) {
             double angle = (float)Math.atan2(deltaY, deltaX) * 180 / Math.PI;
 
             float moveX = (float) (Math.cos(angle * Math.PI / 180) * speed) * delta;
@@ -193,10 +205,8 @@ public class Player extends Actor {
 
     public void stop() {
         state = State.IDLE;
-    }
-
-    public Vector2 getPosition() {
-        return position.set(getX(), getY());
+        velocity.set(0, 0);
+        moveTarget.set(-1, -1);
     }
 
     public void performAttack(int count) {
@@ -215,6 +225,10 @@ public class Player extends Actor {
         return state == State.WALK;
     }
 
+    public Vector2 getPosition() {
+        return position.set(getX(), getY());
+    }
+
     public Rectangle getCollisionArea() {
         return collisionArea;
     }
@@ -229,6 +243,11 @@ public class Player extends Actor {
 
     public boolean isTakingDamage() {
         return takingDamage;
+    }
+
+    public void startWalkState() {
+        state = State.WALK;
+        moveTarget.set(-1, -1);
     }
 
     public void takeDamage() {
