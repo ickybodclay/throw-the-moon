@@ -265,8 +265,6 @@ public class GameStage extends Stage {
         else if(shouldScrollCamera(playerScreenX)) {
             float shiftX = playerScreenX - (Gdx.graphics.getWidth() * SCROLL_SCREEN_PERCENT_TRIGGER);
             getCamera().translate(shiftX, 0.0f, 0.0f);
-            touchPoint.x += shiftX;
-            player.moveTo(screenToStageCoordinates(touchPoint));
         }
     }
 
