@@ -76,7 +76,7 @@ public class GameStage extends Stage {
     private float playerScreenX = 0.0f;
 
     public GameStage(final AssetManager manager) {
-        super(new StretchViewport(1920f, 1080f));
+        super(new StretchViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
 
         this.manager = manager;
 
@@ -87,24 +87,13 @@ public class GameStage extends Stage {
         random = new Random(System.currentTimeMillis());
 
         background = new Background(manager);
-        addActor(background);
-
         chain = new MoonChain(manager);
-        addActor(chain);
-
         player = new Player(manager);
-        player.setX(getWidth() / 4);
-        player.setY(getHeight() / 3);
-        addActor(player);
-
-        chain.attachTail(player);
-
-        //moon = new Moon(manager);
-        //moon.setX(100);
-        //moon.setY(800);
-        //addActor(moon);
+        moon = new Moon(manager);
 
         touchPoint = new Vector2();
+
+        resetLevel();
 
         debug = isDebug();
         setDebugAll(debug);
@@ -119,8 +108,8 @@ public class GameStage extends Stage {
                 }
 
                 // FIXME replace String.format with StringBuilder for HTML
-                //if (isDebug())
-                //    Gdx.app.log("GameStage", String.format("touchDown %s %s", event.getType().toString(), event.getTarget().toString()));
+                if (isDebug())
+                    Gdx.app.log("GameStage", String.format("touchDown %s %s", event.getType().toString(), event.getTarget().toString()));
                 super.touchDown(event, x, y, pointer, button);
             }
 
@@ -144,8 +133,10 @@ public class GameStage extends Stage {
                 player.performAttack(count);
 
                 // FIXME replace String.format with StringBuilder for HTML
-                //if (isDebug())
-                //    Gdx.app.log("GameStage", String.format("tap type:%s target:%s count:%d", event.getType().toString(), event.getTarget().toString(), count));
+                if (isDebug())
+                    Gdx.app.log("GameStage",
+                        String.format("tap type:%s target:%s count:%d [x:%.2f, y:%.2f]",
+                            event.getType().toString(), event.getTarget().toString(), count, x, y));
                 super.tap(event, x, y, count, button);
             }
         });
@@ -156,6 +147,10 @@ public class GameStage extends Stage {
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
                 switch (keycode) {
+                    case Input.Keys.D:
+                        if(!moon.isFalling())
+                            moon.startFalling();
+                        break;
                     case Input.Keys.SPACE:
                         attackCounter++;
                         player.performAttack(attackCounter);
@@ -264,6 +259,7 @@ public class GameStage extends Stage {
         else if(shouldScrollCamera(playerScreenX)) {
             float shiftX = playerScreenX - (Gdx.graphics.getWidth() * SCROLL_SCREEN_PERCENT_TRIGGER);
             getCamera().translate(shiftX, 0.0f, 0.0f);
+            if(!moon.isFalling()) moon.moveBy(shiftX, 0.0f);
         }
     }
 
@@ -370,22 +366,23 @@ public class GameStage extends Stage {
         return player.getStage() == null;
     }
 
-    public void restartLevel() {
+    public void resetLevel() {
         getActors().clear();
         addActor(background);
+        addActor(moon);
         addActor(chain);
+        addActor(player);
 
         // reset player position and add back to stage
         player.setX(getWidth() / 4);
         player.setY(getHeight() / 3);
         player.reset();
-        addActor(player);
+        moon.setPosition(0, getHeight() - 100);
+        chain.attachTail(player);
 
         playerScreenX = 0.0f;
 
         getCamera().position.set(getWidth() / 2, getHeight() / 2, 0);
-
-        chain.attachTail(player);
 
         touchPoint.set(0, 0);
 
