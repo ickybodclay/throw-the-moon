@@ -40,7 +40,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.color;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.run;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
@@ -119,7 +118,7 @@ public class Player extends Actor {
         position = new Vector2(getX(), getY());
         velocity = new Vector2(0, 0);
 
-        collisionArea = new Rectangle(50, 0, (int)getWidth() - 100, (int)getHeight());
+        collisionArea = new Rectangle(getX() + 50, getY(), (int)getWidth() - 100, (int)getHeight());
         attackArea = new Rectangle(0, 0, 0, 0);
     }
 
@@ -129,6 +128,7 @@ public class Player extends Actor {
         state = State.IDLE;
         moveTarget.set(-1, -1);
         position.set(getX(), getY());
+        collisionArea.setPosition(getX() + 50, getY());
         velocity.set(0, 0);
         attackArea.set(0, 0, 0, 0);
         takingDamage = false;
@@ -142,10 +142,12 @@ public class Player extends Actor {
         switch (state) {
             case IDLE:
                 currentFrame = idle.getKeyFrame(stateTime);
+                attackArea.set(0,0,0,0);
                 break;
             case WALK:
                 updateMovement(delta);
                 currentFrame = walk.getKeyFrame(stateTime);
+                attackArea.set(0,0,0,0);
                 break;
             case ATTACK:
                 updateAttack(delta);

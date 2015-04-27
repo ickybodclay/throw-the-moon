@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Random;
 
 import broken.shotgun.throwthemoon.actors.Background;
+import broken.shotgun.throwthemoon.actors.Boss;
 import broken.shotgun.throwthemoon.actors.Enemy;
 import broken.shotgun.throwthemoon.actors.Moon;
 import broken.shotgun.throwthemoon.actors.MoonChain;
@@ -55,6 +56,8 @@ import static broken.shotgun.throwthemoon.ThrowTheMoonGame.isDebug;
 
 public class GameStage extends Stage {
     private static final String MUSIC_FILENAME = "SnestedLoops.ogg";
+    private static final float WIDTH = 1920;
+    private static final float HEIGHT = 1080;
     private boolean debug;
 
     private final AssetManager manager;
@@ -67,6 +70,7 @@ public class GameStage extends Stage {
     private Player player;
     private Moon moon;
     private MoonChain chain;
+    private Boss boss;
 
     private Music music;
 
@@ -76,7 +80,7 @@ public class GameStage extends Stage {
     private float playerScreenX = 0.0f;
 
     public GameStage(final AssetManager manager) {
-        super(new StretchViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
+        super(new StretchViewport(WIDTH, HEIGHT));
 
         this.manager = manager;
 
@@ -90,6 +94,7 @@ public class GameStage extends Stage {
         chain = new MoonChain(manager);
         player = new Player(manager);
         moon = new Moon(manager);
+        boss = new Boss(manager);
 
         touchPoint = new Vector2();
 
@@ -208,6 +213,18 @@ public class GameStage extends Stage {
         currentLevel.chapter = 1;
 
         int wallX = (int) (Gdx.graphics.getWidth() * 0.75f);
+
+        // boss
+        EnemySpawnWall bossSpawnWall = new EnemySpawnWall();
+        bossSpawnWall.spawnWallX = wallX;
+        EnemySpawn bossSpawn = new EnemySpawn();
+        bossSpawn.enemyId = 100;
+        bossSpawn.location = SpawnLocation.FRONT;
+        bossSpawnWall.enemySpawnList.add(bossSpawn);
+        currentLevel.enemySpawnWallList.add(bossSpawnWall);
+
+        wallX += (int) (Gdx.graphics.getWidth() * 0.75f);
+
         for(int i=0; i<3; ++i) {
             EnemySpawnWall spawnWall = new EnemySpawnWall();
             spawnWall.spawnWallX = wallX;
@@ -312,23 +329,43 @@ public class GameStage extends Stage {
     public void spawnEnemies(List<EnemySpawn> spawnList) {
         int offsetY = 100;
         for(EnemySpawn spawn : spawnList) {
-            Enemy newEnemy = new Enemy(manager);
-            Vector2 spawnPoint = new Vector2();
-            spawnPoint.y = offsetY + random.nextInt((int) newEnemy.getHeight());
-            switch (spawn.location) {
-                case FRONT:
-                    spawnPoint.x = Gdx.graphics.getWidth() * 0.8f;
-                    break;
-                case BACK:
-                    spawnPoint.x = Gdx.graphics.getWidth() * 0.15f;
-                    break;
-            }
+            if(spawn.enemyId == 0) {
+                Enemy newEnemy = new Enemy(manager);
+                Vector2 spawnPoint = new Vector2();
+                spawnPoint.y = offsetY + random.nextInt((int) newEnemy.getHeight());
+                switch (spawn.location) {
+                    case FRONT:
+                        spawnPoint.x = Gdx.graphics.getWidth() * 0.8f;
+                        break;
+                    case BACK:
+                        spawnPoint.x = Gdx.graphics.getWidth() * 0.15f;
+                        break;
+                }
 
-            screenToStageCoordinates(spawnPoint);
-            newEnemy.setPosition(spawnPoint.x, spawnPoint.y);
-            newEnemy.setColor(1.0f, 1.0f, 1.0f, 0.0f);
-            newEnemy.addAction(Actions.fadeIn(0.5f));
-            addActor(newEnemy);
+                screenToStageCoordinates(spawnPoint);
+                newEnemy.setPosition(spawnPoint.x, spawnPoint.y);
+                newEnemy.setColor(1.0f, 1.0f, 1.0f, 0.0f);
+                newEnemy.addAction(Actions.fadeIn(0.5f));
+                addActor(newEnemy);
+            }
+            else if(spawn.enemyId == 100) {
+                Vector2 spawnPoint = new Vector2();
+                spawnPoint.y = Gdx.graphics.getHeight() * 2/3;
+                switch (spawn.location) {
+                    case FRONT:
+                        spawnPoint.x = Gdx.graphics.getWidth() * 0.70f;
+                        break;
+                    case BACK:
+                        spawnPoint.x = Gdx.graphics.getWidth() * 0.15f;
+                        break;
+                }
+
+                screenToStageCoordinates(spawnPoint);
+                boss.setPosition(spawnPoint.x, spawnPoint.y);
+                boss.setColor(1.0f, 1.0f, 1.0f, 0.0f);
+                boss.addAction(Actions.fadeIn(0.5f));
+                addActor(boss);
+            }
 
             offsetY += 100;
         }
@@ -337,6 +374,7 @@ public class GameStage extends Stage {
     public boolean allOnscreenEnemiesDefeated() {
         for(Actor entity : getActors()) {
             if(entity instanceof Enemy) return false;
+            if(entity instanceof Boss) return false;
         }
         return true;
     }
