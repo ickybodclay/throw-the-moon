@@ -32,8 +32,18 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.color;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.forever;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.parallel;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 
 public class Boss extends Actor {
     private static final String TEXTURE_FILENAME = "boss.png";
@@ -67,7 +77,9 @@ public class Boss extends Actor {
         setHeight(currentFrame.getRegionHeight());
         setOrigin(getWidth() / 2, getHeight() / 2);
 
-        collisionArea = new Rectangle(getX(), getY() + 80, (int)getWidth(), (int)getHeight() - 170);
+        collisionArea = new Rectangle(getX(), getY() + 80, (int) getWidth(), (int) getHeight() - 170);
+
+        health = 5;
     }
 
     @Override
@@ -92,9 +104,51 @@ public class Boss extends Actor {
         shapes.set(ShapeRenderer.ShapeType.Line);
         shapes.setColor(Color.GREEN);
         shapes.rect(collisionArea.x, collisionArea.y, collisionArea.width, collisionArea.height);
+        shapes.setColor(Color.RED);
+        shapes.circle(getX() + getOriginX(), getY() + getOriginY(), 10f);
     }
 
     public Rectangle getCollisionArea() {
         return collisionArea;
+    }
+
+    public void startBattle() {
+        Vector2 pointA = new Vector2();
+        Vector2 pointB = new Vector2();
+        //Vector2 pointC = new Vector2();
+        //Vector2 pointD = new Vector2();
+
+        addAction(
+            forever(
+                sequence(
+                    Actions.delay(3f),
+                    Actions.moveTo(0, 0, 5f, Interpolation.swingIn),
+                    Actions.delay(3f),
+                    Actions.moveTo(0, 0, 5f, Interpolation.swingIn)
+                )
+            ));
+    }
+
+    public void takeDamage(int direction) {
+        health--;
+
+        if (health <= 0) {
+            die();
+            return;
+        }
+
+        addAction(
+            sequence(
+                parallel(
+                    Actions.moveBy(20 * direction, 0, 0.3f, Interpolation.circleOut), sequence(color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f))),
+                    Actions.moveTo(getX(), getY(), 0.1f, Interpolation.circleIn)));
+    }
+
+    public void die() {
+        clearActions();
+        addAction(
+            sequence(
+                fadeOut(0.4f, Interpolation.fade),
+                removeActor()));
     }
 }

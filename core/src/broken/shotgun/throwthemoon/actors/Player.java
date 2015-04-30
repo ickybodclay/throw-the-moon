@@ -282,7 +282,7 @@ public class Player extends Actor {
 
         addAction(
                 sequence(
-                        sequence(color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f), color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f), color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f)),
+                        sequence(color(Color.BLACK, 0.5f), color(Color.WHITE, 0.5f), color(Color.BLACK, 0.5f), color(Color.WHITE, 0.5f), color(Color.BLACK, 0.5f), color(Color.WHITE, 0.5f)),
                         run(new Runnable() {
                             @Override
                             public void run() {

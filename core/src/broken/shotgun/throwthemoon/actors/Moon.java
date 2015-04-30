@@ -26,9 +26,11 @@ package broken.shotgun.throwthemoon.actors;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.TextureLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
@@ -64,6 +66,14 @@ public class Moon extends Actor {
                 getWidth(), getHeight(),
                 getScaleX(), getScaleY(),
                 getRotation());
+    }
+
+    @Override
+    public void drawDebug(ShapeRenderer shapes) {
+        super.drawDebug(shapes);
+        if (!getDebug()) return;
+        shapes.setColor(Color.RED);
+        shapes.circle(getX() + getOriginX(), getY() + getOriginY(), 10f);
     }
 
     public void startFalling() {
