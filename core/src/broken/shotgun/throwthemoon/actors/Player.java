@@ -65,6 +65,7 @@ public class Player extends Actor {
     private final Rectangle collisionArea;
     private final Rectangle attackArea;
     private boolean takingDamage = false;
+    private boolean dying = false;
 
     private TextureRegion currentFrame;
 
@@ -132,6 +133,7 @@ public class Player extends Actor {
         velocity.set(0, 0);
         attackArea.set(0, 0, 0, 0);
         takingDamage = false;
+        dying = false;
         stateTime = 0f;
     }
 
@@ -218,6 +220,8 @@ public class Player extends Actor {
         shapes.rect(collisionArea.x, collisionArea.y, collisionArea.width, collisionArea.height);
         shapes.setColor(Color.RED);
         shapes.rect(attackArea.x, attackArea.y, attackArea.width, attackArea.height);
+        shapes.setColor(Color.RED);
+        shapes.circle(getX() + getOriginX(), getY() + getOriginY(), 10f);
     }
 
     public void moveTo(Vector2 point) {
@@ -293,7 +297,11 @@ public class Player extends Actor {
     }
 
     public void die() {
-        dieSfx.play();
+    	if(dying) return;
+    	
+    	dying = true;
+    	
+        dieSfx.play(1.0f, 0.5f, 0);
 
         addAction(
             sequence(

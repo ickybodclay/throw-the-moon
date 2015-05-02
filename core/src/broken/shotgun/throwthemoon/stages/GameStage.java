@@ -29,6 +29,9 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.MusicLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -52,7 +55,6 @@ import broken.shotgun.throwthemoon.models.EnemySpawn;
 import broken.shotgun.throwthemoon.models.EnemySpawnWall;
 import broken.shotgun.throwthemoon.models.Level;
 import broken.shotgun.throwthemoon.models.SpawnLocation;
-
 import static broken.shotgun.throwthemoon.ThrowTheMoonGame.isDebug;
 
 public class GameStage extends Stage {
@@ -73,7 +75,11 @@ public class GameStage extends Stage {
     private MoonChain chain;
     private Boss boss;
 
-    private LevelDebugRenderer levelDebugRenderer;
+    private final LevelDebugRenderer levelDebugRenderer;
+    private final StringBuilder screenLogger;
+    
+    private final Batch uiBatch;
+    private final BitmapFont font;
 
     private Music music;
 
@@ -100,6 +106,10 @@ public class GameStage extends Stage {
         boss = new Boss(manager);
 
         levelDebugRenderer = new LevelDebugRenderer();
+        screenLogger = new StringBuilder();
+        
+        uiBatch = new SpriteBatch();
+        font = new BitmapFont();
 
         touchPoint = new Vector2();
 
@@ -212,14 +222,13 @@ public class GameStage extends Stage {
 
         music = manager.get(MUSIC_FILENAME);
         music.setLooping(true);
-        music.play();
     }
 
     private void loadLevel() {
         currentLevel = new Level();
         currentLevel.chapter = 1;
 
-        int wallX = (int) (getViewport().getScreenWidth() * 0.75f);
+        int wallX = (int) (WIDTH * 0.75f);
 
         // boss
         EnemySpawnWall bossSpawnWall = new EnemySpawnWall();
@@ -230,7 +239,7 @@ public class GameStage extends Stage {
         bossSpawnWall.enemySpawnList.add(bossSpawn);
         currentLevel.enemySpawnWallList.add(bossSpawnWall);
 
-        wallX += (int) (getViewport().getScreenWidth() * 0.75f);
+        wallX += (int) (WIDTH * 0.75f);
 
         for(int i=0; i<3; ++i) {
             EnemySpawnWall spawnWall = new EnemySpawnWall();
@@ -254,7 +263,7 @@ public class GameStage extends Stage {
 
             currentLevel.enemySpawnWallList.add(spawnWall);
 
-            wallX += (int) (getViewport().getScreenWidth() * 0.75f);
+            wallX += (int) (WIDTH * 0.75f);
         }
     }
 
@@ -265,6 +274,8 @@ public class GameStage extends Stage {
         playerScreenX = stageToScreenCoordinates(player.getPosition()).x;
 
         handleCollisions();
+        
+        logPoisitions();
 
         if(isChainOffscreen()) {
             startGameOver();
@@ -287,7 +298,21 @@ public class GameStage extends Stage {
         }
     }
 
-    @Override
+    private void logPoisitions() {
+    	if(!debug) return;
+    	
+    	for(Actor entity : getActors()) {
+    		String tag = (entity instanceof Player) ? "Player" :
+    			(entity instanceof Enemy) ? "Enemy" :
+    			(entity instanceof Boss) ? "Boss" : null;
+    		
+    		if(tag != null) {
+    			vlog(String.format("%s [x:%.0f, y:%.0f]", tag, entity.getX(), entity.getY()));
+    		}
+    	}
+	}
+
+	@Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
         return super.touchDragged(screenX, screenY, pointer);
     }
@@ -302,6 +327,7 @@ public class GameStage extends Stage {
     }
 
     private void handleCollisions() {
+    	boolean attackHit = false;
         for(Actor entity : getActors()) {
             if(entity instanceof Enemy) {
                 Enemy enemy = (Enemy) entity;
@@ -311,7 +337,7 @@ public class GameStage extends Stage {
                 }
                 if(enemy.getCollisionArea().overlaps(player.getAttackArea())) {
                     enemy.takeDamage(player.getAttackArea().x < enemy.getX() + enemy.getOriginX() ? 1 : -1);
-                    player.clearAttackArea();
+                    attackHit = true;
                 }
             }
             else if(entity instanceof Boss) {
@@ -322,7 +348,7 @@ public class GameStage extends Stage {
                 }
                 if(boss.getCollisionArea().overlaps(player.getAttackArea())) {
                     boss.takeDamage(player.getAttackArea().x < boss.getX() + boss.getOriginX() ? 1 : -1);
-                    player.clearAttackArea();
+                    attackHit = true;
                 }
             }
             else if(entity instanceof MoonChain && !((MoonChain) entity).isAttached() && !player.isTakingDamage()) {
@@ -331,6 +357,8 @@ public class GameStage extends Stage {
                 }
             }
         }
+        
+        if(attackHit) player.clearAttackArea();
     }
 
     public boolean shouldScrollCamera(float x) {
@@ -388,6 +416,7 @@ public class GameStage extends Stage {
                 boss.setColor(1.0f, 1.0f, 1.0f, 0.0f);
                 boss.addAction(Actions.fadeIn(0.5f));
                 addActor(boss);
+                boss.startBattle();
             }
 
             offsetY += 100;
@@ -405,11 +434,20 @@ public class GameStage extends Stage {
     @Override
     public void draw() {
         super.draw();
+        
+        if(debug) {
+	        uiBatch.begin();
+			font.draw(uiBatch, screenLogger.toString(), 50, 200);
+			screenLogger.setLength(0);
+			uiBatch.end();
+        }
     }
 
     @Override
     public void dispose() {
         super.dispose();
+        uiBatch.dispose();
+        font.dispose();
     }
 
     @Override
@@ -456,5 +494,9 @@ public class GameStage extends Stage {
         wallIndex = 0;
 
         music.play();
+    }
+    
+    private void vlog(String line) {
+    	screenLogger.append(line + "\n");
     }
 }

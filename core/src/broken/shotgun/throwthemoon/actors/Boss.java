@@ -24,8 +24,10 @@
 package broken.shotgun.throwthemoon.actors;
 
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.assets.loaders.SoundLoader;
 import com.badlogic.gdx.assets.loaders.TextureLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -47,6 +49,7 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 
 public class Boss extends Actor {
     private static final String TEXTURE_FILENAME = "boss.png";
+    private static final String SFX_HIT_FILENAME = "sfx/enemy_hit.wav";
     private static final int FRAME_WIDTH = 512;
     private static final int FRAME_HEIGHT = 512;
 
@@ -56,6 +59,8 @@ public class Boss extends Actor {
     private final Animation idle;
     private TextureRegion currentFrame;
     private float stateTime = 0.0f;
+    
+    private final Sound hitSfx;
 
     private final Rectangle collisionArea;
 
@@ -63,13 +68,17 @@ public class Boss extends Actor {
 
     public Boss(final AssetManager manager) {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
+        manager.setLoader(Sound.class, new SoundLoader(new InternalFileHandleResolver()));
         manager.load(TEXTURE_FILENAME, Texture.class);
+        manager.load(SFX_HIT_FILENAME, Sound.class);
         manager.finishLoading();
 
         texture = manager.get(TEXTURE_FILENAME);
         regions = TextureRegion.split(texture, FRAME_WIDTH, FRAME_HEIGHT)[0];
         idle = new Animation(0.1f, regions[0], regions[1], regions[2]);
         idle.setPlayMode(Animation.PlayMode.LOOP);
+        
+        hitSfx = manager.get(SFX_HIT_FILENAME);
 
         currentFrame = idle.getKeyFrame(0.0f);
 
@@ -113,18 +122,21 @@ public class Boss extends Actor {
     }
 
     public void startBattle() {
-        Vector2 pointA = new Vector2();
-        Vector2 pointB = new Vector2();
+        Vector2 pointA = new Vector2(getStage().getViewport().getScreenWidth() * 0.7f, getStage().getViewport().getScreenHeight() / 2f);
+        Vector2 pointB = new Vector2(getStage().getViewport().getScreenWidth() * 0.05f, getStage().getViewport().getScreenHeight() / 2f);
         //Vector2 pointC = new Vector2();
         //Vector2 pointD = new Vector2();
+        
+        getStage().screenToStageCoordinates(pointA);
+        getStage().screenToStageCoordinates(pointB);
 
         addAction(
             forever(
                 sequence(
                     Actions.delay(3f),
-                    Actions.moveTo(0, 0, 5f, Interpolation.swingIn),
+                    Actions.moveTo(pointA.x, pointA.y, 5f, Interpolation.swingIn),
                     Actions.delay(3f),
-                    Actions.moveTo(0, 0, 5f, Interpolation.swingIn)
+                    Actions.moveTo(pointB.x, pointB.y, 5f, Interpolation.swingIn)
                 )
             ));
     }
@@ -132,6 +144,8 @@ public class Boss extends Actor {
     public void takeDamage(int direction) {
         health--;
 
+        hitSfx.play();
+        
         if (health <= 0) {
             die();
             return;
