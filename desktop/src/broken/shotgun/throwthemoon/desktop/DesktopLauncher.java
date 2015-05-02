@@ -10,6 +10,7 @@ public class DesktopLauncher {
 		config.width=1280;
 		config.height=720;
 		config.vSyncEnabled=true;
+		config.resizable = false;
 		new LwjglApplication(new ThrowTheMoonGame(true), config);
 	}
 }
