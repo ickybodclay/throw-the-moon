@@ -40,7 +40,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.color;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.run;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
@@ -66,6 +65,7 @@ public class Player extends Actor {
     private final Rectangle collisionArea;
     private final Rectangle attackArea;
     private boolean takingDamage = false;
+    private boolean dying = false;
 
     private TextureRegion currentFrame;
 
@@ -119,7 +119,7 @@ public class Player extends Actor {
         position = new Vector2(getX(), getY());
         velocity = new Vector2(0, 0);
 
-        collisionArea = new Rectangle(50, 0, (int)getWidth() - 100, (int)getHeight());
+        collisionArea = new Rectangle(getX() + 50, getY(), (int)getWidth() - 100, (int)getHeight());
         attackArea = new Rectangle(0, 0, 0, 0);
     }
 
@@ -129,9 +129,11 @@ public class Player extends Actor {
         state = State.IDLE;
         moveTarget.set(-1, -1);
         position.set(getX(), getY());
+        collisionArea.setPosition(getX() + 50, getY());
         velocity.set(0, 0);
         attackArea.set(0, 0, 0, 0);
         takingDamage = false;
+        dying = false;
         stateTime = 0f;
     }
 
@@ -142,10 +144,12 @@ public class Player extends Actor {
         switch (state) {
             case IDLE:
                 currentFrame = idle.getKeyFrame(stateTime);
+                attackArea.set(0,0,0,0);
                 break;
             case WALK:
                 updateMovement(delta);
                 currentFrame = walk.getKeyFrame(stateTime);
+                attackArea.set(0,0,0,0);
                 break;
             case ATTACK:
                 updateAttack(delta);
@@ -212,10 +216,14 @@ public class Player extends Actor {
     public void drawDebug(ShapeRenderer shapes) {
         if (!getDebug()) return;
         shapes.set(ShapeRenderer.ShapeType.Line);
+        shapes.setColor(Color.GRAY);
+        shapes.rect(getX(), getY(), getWidth(), getHeight());
         shapes.setColor(Color.GREEN);
         shapes.rect(collisionArea.x, collisionArea.y, collisionArea.width, collisionArea.height);
         shapes.setColor(Color.RED);
         shapes.rect(attackArea.x, attackArea.y, attackArea.width, attackArea.height);
+        shapes.setColor(Color.RED);
+        shapes.circle(getX() + getOriginX(), getY() + getOriginY(), 10f);
     }
 
     public void moveTo(Vector2 point) {
@@ -280,7 +288,7 @@ public class Player extends Actor {
 
         addAction(
                 sequence(
-                        sequence(color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f), color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f), color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f)),
+                        sequence(color(Color.BLACK, 0.5f), color(Color.WHITE, 0.5f), color(Color.BLACK, 0.5f), color(Color.WHITE, 0.5f), color(Color.BLACK, 0.5f), color(Color.WHITE, 0.5f)),
                         run(new Runnable() {
                             @Override
                             public void run() {
@@ -291,7 +299,11 @@ public class Player extends Actor {
     }
 
     public void die() {
-        dieSfx.play();
+    	if(dying) return;
+    	
+    	dying = true;
+    	
+        dieSfx.play(1.0f, 0.5f, 0);
 
         addAction(
             sequence(

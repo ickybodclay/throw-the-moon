@@ -30,6 +30,12 @@ import com.badlogic.gdx.assets.loaders.MusicLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -43,7 +49,9 @@ import java.util.List;
 import java.util.Random;
 
 import broken.shotgun.throwthemoon.actors.Background;
+import broken.shotgun.throwthemoon.actors.Boss;
 import broken.shotgun.throwthemoon.actors.Enemy;
+import broken.shotgun.throwthemoon.actors.LevelDebugRenderer;
 import broken.shotgun.throwthemoon.actors.Moon;
 import broken.shotgun.throwthemoon.actors.MoonChain;
 import broken.shotgun.throwthemoon.actors.Player;
@@ -51,11 +59,12 @@ import broken.shotgun.throwthemoon.models.EnemySpawn;
 import broken.shotgun.throwthemoon.models.EnemySpawnWall;
 import broken.shotgun.throwthemoon.models.Level;
 import broken.shotgun.throwthemoon.models.SpawnLocation;
-
 import static broken.shotgun.throwthemoon.ThrowTheMoonGame.isDebug;
 
 public class GameStage extends Stage {
     private static final String MUSIC_FILENAME = "SnestedLoops.ogg";
+    private static final float WIDTH = 1920f;
+    private static final float HEIGHT = 1080f;
     private boolean debug;
 
     private final AssetManager manager;
@@ -63,11 +72,21 @@ public class GameStage extends Stage {
     private Level currentLevel;
     private int wallIndex = 0;
     private Random random;
+    private boolean fadingOut;
 
     private Background background;
     private Player player;
     private Moon moon;
     private MoonChain chain;
+    private Boss boss;
+    private Actor screenFadeActor;
+
+    private final LevelDebugRenderer levelDebugRenderer;
+    private final StringBuilder screenLogger;
+    
+    private final Batch uiBatch;
+    private final BitmapFont font;
+    private final ShapeRenderer renderer;
 
     private Music music;
 
@@ -77,7 +96,7 @@ public class GameStage extends Stage {
     private float playerScreenX = 0.0f;
 
     public GameStage(final AssetManager manager) {
-        super(new StretchViewport(1920f, 1080f));
+        super(new StretchViewport(WIDTH, HEIGHT));
 
         this.manager = manager;
 
@@ -86,26 +105,27 @@ public class GameStage extends Stage {
         loadMusic();
 
         random = new Random(System.currentTimeMillis());
+        fadingOut = false;
 
         background = new Background(manager);
-        addActor(background);
-
         chain = new MoonChain(manager);
-        addActor(chain);
-
         player = new Player(manager);
-        player.setX(getWidth() / 4);
-        player.setY(getHeight() / 3);
-        addActor(player);
+        moon = new Moon(manager);
+        
+        screenFadeActor = new Actor();
+        screenFadeActor.setBounds(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        screenFadeActor.setColor(Color.CLEAR);
 
-        chain.attachTail(player);
-
-        //moon = new Moon(manager);
-        //moon.setX(100);
-        //moon.setY(800);
-        //addActor(moon);
+        levelDebugRenderer = new LevelDebugRenderer();
+        screenLogger = new StringBuilder();
+        
+        uiBatch = new SpriteBatch();
+        font = new BitmapFont();
+        renderer = new ShapeRenderer();
 
         touchPoint = new Vector2();
+
+        resetLevel();
 
         debug = isDebug();
         setDebugAll(debug);
@@ -115,13 +135,13 @@ public class GameStage extends Stage {
         addListener(new ActorGestureListener() {
             @Override
             public void touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                if (pointer == 0 && !(event.getTarget() instanceof Enemy)) {
+                if (pointer == 0 && !(event.getTarget() instanceof Enemy || event.getTarget() instanceof Boss)) {
                     player.moveTo(touchPoint.set(x, y));
                 }
 
                 // FIXME replace String.format with StringBuilder for HTML
-                //if (isDebug())
-                //    Gdx.app.log("GameStage", String.format("touchDown %s %s", event.getType().toString(), event.getTarget().toString()));
+                if (isDebug())
+                    Gdx.app.log("GameStage", String.format("touchDown %s %s", event.getType().toString(), event.getTarget().toString()));
                 super.touchDown(event, x, y, pointer, button);
             }
 
@@ -145,8 +165,12 @@ public class GameStage extends Stage {
                 player.performAttack(count);
 
                 // FIXME replace String.format with StringBuilder for HTML
-                //if (isDebug())
-                //    Gdx.app.log("GameStage", String.format("tap type:%s target:%s count:%d", event.getType().toString(), event.getTarget().toString(), count));
+                if (isDebug()) {
+                    Actor target = event.getTarget();
+                    Gdx.app.log("GameStage",
+                        String.format("tap type:%s target:%s [target x=%.2f y=%.2f] count:%d [x:%.2f, y:%.2f]",
+                            event.getType().toString(), target.toString(), target.getX(), target.getY(), count, x, y));
+                }
                 super.tap(event, x, y, count, button);
             }
         });
@@ -157,6 +181,10 @@ public class GameStage extends Stage {
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
                 switch (keycode) {
+                    case Input.Keys.D:
+                        if(!moon.isFalling())
+                            moon.startFalling();
+                        break;
                     case Input.Keys.SPACE:
                         attackCounter++;
                         player.performAttack(attackCounter);
@@ -206,14 +234,25 @@ public class GameStage extends Stage {
 
         music = manager.get(MUSIC_FILENAME);
         music.setLooping(true);
-        music.play();
     }
 
     private void loadLevel() {
         currentLevel = new Level();
         currentLevel.chapter = 1;
 
-        int wallX = (int) (Gdx.graphics.getWidth() * 0.75f);
+        int wallX = (int) (WIDTH * 0.75f);
+
+        // boss
+        EnemySpawnWall bossSpawnWall = new EnemySpawnWall();
+        bossSpawnWall.spawnWallX = wallX;
+        EnemySpawn bossSpawn = new EnemySpawn();
+        bossSpawn.enemyId = 100;
+        bossSpawn.location = SpawnLocation.FRONT;
+        bossSpawnWall.enemySpawnList.add(bossSpawn);
+        currentLevel.enemySpawnWallList.add(bossSpawnWall);
+
+        wallX += (int) (WIDTH * 0.75f);
+
         for(int i=0; i<3; ++i) {
             EnemySpawnWall spawnWall = new EnemySpawnWall();
             spawnWall.spawnWallX = wallX;
@@ -236,7 +275,7 @@ public class GameStage extends Stage {
 
             currentLevel.enemySpawnWallList.add(spawnWall);
 
-            wallX += (int) (Gdx.graphics.getWidth() * 0.75f);
+            wallX += (int) (WIDTH * 0.75f);
         }
     }
 
@@ -247,8 +286,13 @@ public class GameStage extends Stage {
         playerScreenX = stageToScreenCoordinates(player.getPosition()).x;
 
         handleCollisions();
+        
+        logPoisitions();
 
-        if(isChainOffscreen()) {
+        if(isStageClear()){
+        	// do nothing
+        }
+        else if(isChainOffscreen()) {
             startGameOver();
         }
         else if(triggerSpawnWall(player.getX())) {
@@ -263,9 +307,36 @@ public class GameStage extends Stage {
             }
         }
         else if(shouldScrollCamera(playerScreenX)) {
-            float shiftX = playerScreenX - (Gdx.graphics.getWidth() * SCROLL_SCREEN_PERCENT_TRIGGER);
+            float shiftX = playerScreenX - (getViewport().getScreenWidth() * SCROLL_SCREEN_PERCENT_TRIGGER);
             getCamera().translate(shiftX, 0.0f, 0.0f);
+            if(!moon.isFalling()) moon.moveBy(shiftX, 0.0f);
         }
+    }
+
+    private void logPoisitions() {
+    	if(!debug) return;
+    	
+    	vlog(String.format("Camera [x:%.0f, y:%.0f, width:%.0f, height:%.0f]", getCamera().position.x, getCamera().position.y, getCamera().viewportWidth, getCamera().viewportHeight));
+    	vlog(String.format("Stage [width:%.0f, height:%.0f]", getWidth(), getHeight()));
+    	vlog(String.format("Screen [width:%d, height:%d]", getViewport().getScreenWidth(), getViewport().getScreenHeight()));
+    	
+    	if(wallIndex < currentLevel.enemySpawnWallList.size())
+    		vlog(String.format("Current spawn wall [index: %d, x: %d]", wallIndex, currentLevel.enemySpawnWallList.get(wallIndex).spawnWallX));
+    	
+    	for(Actor entity : getActors()) {
+    		String tag = (entity instanceof Player) ? "Player" :
+    			(entity instanceof Enemy) ? "Enemy" :
+    			(entity instanceof Boss) ? "Boss" : null;
+    		
+    		if(tag != null) {
+    			vlog(String.format("%s [x:%.0f, y:%.0f]", tag, entity.getX(), entity.getY()));
+    		}
+    	}
+	}
+
+	@Override
+    public boolean touchDragged(int screenX, int screenY, int pointer) {
+        return super.touchDragged(screenX, screenY, pointer);
     }
 
     private void startGameOver() {
@@ -278,6 +349,7 @@ public class GameStage extends Stage {
     }
 
     private void handleCollisions() {
+    	boolean attackHit = false;
         for(Actor entity : getActors()) {
             if(entity instanceof Enemy) {
                 Enemy enemy = (Enemy) entity;
@@ -286,20 +358,33 @@ public class GameStage extends Stage {
                     player.takeDamage();
                 }
                 if(enemy.getCollisionArea().overlaps(player.getAttackArea())) {
-                    enemy.takeDamage();
-                    player.clearAttackArea();
+                    enemy.takeDamage(player.getAttackArea().x < enemy.getX() + enemy.getOriginX() ? 1 : -1);
+                    attackHit = true;
                 }
             }
-            if(entity instanceof MoonChain && !((MoonChain) entity).isAttached() && !player.isTakingDamage()) {
+            else if(entity instanceof Boss) {
+                Boss boss = (Boss) entity;
+                if(player.getCollisionArea().overlaps(boss.getCollisionArea())) {
+                    if(chain.isAttached()) chain.detachTail();
+                    player.takeDamage();
+                }
+                if(boss.getCollisionArea().overlaps(player.getAttackArea())) {
+                    boss.takeDamage(player.getAttackArea().x < boss.getX() + boss.getOriginX() ? 1 : -1);
+                    attackHit = true;
+                }
+            }
+            else if(entity instanceof MoonChain && !((MoonChain) entity).isAttached() && !player.isTakingDamage()) {
                 if (player.getCollisionArea().overlaps(((MoonChain) entity).getCollisionArea())) {
                     chain.attachTail(player);
                 }
             }
         }
+        
+        if(attackHit) player.clearAttackArea();
     }
 
     public boolean shouldScrollCamera(float x) {
-        return playerScreenX > Gdx.graphics.getWidth() * SCROLL_SCREEN_PERCENT_TRIGGER;
+        return playerScreenX > getViewport().getScreenWidth() * SCROLL_SCREEN_PERCENT_TRIGGER;
     }
 
     public boolean triggerSpawnWall(float x) {
@@ -317,23 +402,51 @@ public class GameStage extends Stage {
     public void spawnEnemies(List<EnemySpawn> spawnList) {
         int offsetY = 100;
         for(EnemySpawn spawn : spawnList) {
-            Enemy newEnemy = new Enemy(manager);
-            Vector2 spawnPoint = new Vector2();
-            spawnPoint.y = offsetY + random.nextInt((int) newEnemy.getHeight());
-            switch (spawn.location) {
-                case FRONT:
-                    spawnPoint.x = Gdx.graphics.getWidth() * 0.8f;
-                    break;
-                case BACK:
-                    spawnPoint.x = Gdx.graphics.getWidth() * 0.15f;
-                    break;
-            }
+            if(spawn.enemyId == 0) {
+                Enemy newEnemy = new Enemy(manager);
+                Vector2 spawnPoint = new Vector2();
+                spawnPoint.y = offsetY + random.nextInt((int) newEnemy.getHeight());
+                switch (spawn.location) {
+                    case FRONT:
+                        spawnPoint.x = getViewport().getScreenWidth() * 0.8f;
+                        break;
+                    case BACK:
+                        spawnPoint.x = getViewport().getScreenWidth() * 0.15f;
+                        break;
+                }
 
-            screenToStageCoordinates(spawnPoint);
-            newEnemy.setPosition(spawnPoint.x, spawnPoint.y);
-            newEnemy.setColor(1.0f, 1.0f, 1.0f, 0.0f);
-            newEnemy.addAction(Actions.fadeIn(0.5f));
-            addActor(newEnemy);
+                screenToStageCoordinates(spawnPoint);
+                newEnemy.setPosition(spawnPoint.x, spawnPoint.y);
+                newEnemy.setColor(1.0f, 1.0f, 1.0f, 0.0f);
+                newEnemy.addAction(Actions.fadeIn(0.5f));
+                addActor(newEnemy);
+            }
+            else if(spawn.enemyId == 100) {
+            	boss = new Boss(manager);
+                Vector2 spawnPoint = new Vector2();
+                spawnPoint.y = getHeight() / 2;
+                switch (spawn.location) {
+                    case FRONT:
+                        spawnPoint.x = getViewport().getScreenWidth() * 0.7f;
+                        break;
+                    case BACK:
+                        spawnPoint.x = getViewport().getScreenWidth() * 0.15f;
+                        break;
+                }
+
+                screenToStageCoordinates(spawnPoint);
+                boss.setPosition(spawnPoint.x + (getViewport().getScreenWidth() * 0.5f), spawnPoint.y);
+                boss.addAction(
+                	Actions.sequence(
+            		Actions.moveTo(spawnPoint.x, spawnPoint.y, 3f, Interpolation.fade),
+            		Actions.run(new Runnable() {
+						@Override
+						public void run() {
+							boss.startBattle();
+						}
+            		})));
+                addActor(boss);
+            }
 
             offsetY += 100;
         }
@@ -342,6 +455,7 @@ public class GameStage extends Stage {
     public boolean allOnscreenEnemiesDefeated() {
         for(Actor entity : getActors()) {
             if(entity instanceof Enemy) return false;
+            if(entity instanceof Boss) return false;
         }
         return true;
     }
@@ -349,11 +463,33 @@ public class GameStage extends Stage {
     @Override
     public void draw() {
         super.draw();
+        
+        if(isStageClear()) {
+        	renderer.begin(ShapeType.Filled);
+        	renderer.setColor(screenFadeActor.getColor());
+        	renderer.rect(
+    			screenFadeActor.getX(), screenFadeActor.getY(), 
+    			screenFadeActor.getOriginX(), screenFadeActor.getOriginY(),
+    			screenFadeActor.getWidth(), screenFadeActor.getHeight(),
+    			screenFadeActor.getScaleX(), screenFadeActor.getScaleY(), 
+    			screenFadeActor.getRotation());
+        	renderer.end();
+        }
+        
+        if(debug) {
+	        uiBatch.begin();
+			font.draw(uiBatch, screenLogger.toString(), 50, 200);
+			screenLogger.setLength(0);
+			uiBatch.end();
+        }
     }
 
     @Override
     public void dispose() {
         super.dispose();
+        uiBatch.dispose();
+        font.dispose();
+        renderer.dispose();
     }
 
     @Override
@@ -371,22 +507,27 @@ public class GameStage extends Stage {
         return player.getStage() == null;
     }
 
-    public void restartLevel() {
+    public void resetLevel() {
         getActors().clear();
         addActor(background);
+        addActor(moon);
         addActor(chain);
+        addActor(player);
+        addActor(levelDebugRenderer);
+        
+        screenFadeActor.setColor(Color.CLEAR);
+
+        levelDebugRenderer.setLevel(currentLevel);
 
         // reset player position and add back to stage
-        player.setX(getWidth() / 4);
-        player.setY(getHeight() / 3);
+        player.setPosition((WIDTH / 8), (HEIGHT / 2));
         player.reset();
-        addActor(player);
+        moon.setPosition((WIDTH / 2) - (moon.getWidth() / 2), HEIGHT - 100);
+        chain.attachTail(player);
 
         playerScreenX = 0.0f;
 
-        getCamera().position.set(getWidth() / 2, getHeight() / 2, 0);
-
-        chain.attachTail(player);
+        getCamera().position.set(WIDTH / 2, HEIGHT / 2, 0);
 
         touchPoint.set(0, 0);
 
@@ -398,4 +539,37 @@ public class GameStage extends Stage {
 
         music.play();
     }
+    
+    private void vlog(String line) {
+    	screenLogger.append(line + "\n");
+    }
+
+	public boolean isStageClear() {
+		return boss != null && boss.isDefeated();
+	}
+	
+	public void stopMusic() {
+		music.stop();
+	}
+	
+	public Actor getScreenFadeActor() {
+		return screenFadeActor;
+	}
+
+	public void fadeOut(Runnable runnable) {
+		if(fadingOut) return;
+		
+		fadingOut = true;
+		
+		addActor(screenFadeActor);
+		
+		screenFadeActor.addAction(
+    			Actions.sequence(
+					Actions.color(Color.BLACK, 5f), 
+					Actions.run(runnable)));
+	}
+
+	public boolean isFadingOut() {
+		return fadingOut;
+	}
 }

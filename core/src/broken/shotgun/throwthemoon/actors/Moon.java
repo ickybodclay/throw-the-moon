@@ -26,23 +26,20 @@ package broken.shotgun.throwthemoon.actors;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.TextureLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 
 public class Moon extends Actor {
     private static final String TEXTURE_FILENAME = "moon.png";
     private final Texture texture;
     private TextureRegion currentFrame;
-
-    public enum State {
-        ORBIT,
-        CRASHING,
-        GROUND
-    }
-
-    private State currentState;
+    private boolean falling;
 
     public Moon(final AssetManager manager) {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
@@ -57,21 +54,7 @@ public class Moon extends Actor {
         setHeight(currentFrame.getRegionHeight());
         setOrigin(getWidth() / 2, getHeight() / 2);
 
-        currentState = State.ORBIT;
-    }
-
-    @Override
-    public void act(float delta) {
-        super.act(delta);
-
-        switch (currentState) {
-            case ORBIT:
-                break;
-            case CRASHING:
-                break;
-            case GROUND:
-                break;
-        }
+        falling = false;
     }
 
     @Override
@@ -83,5 +66,32 @@ public class Moon extends Actor {
                 getWidth(), getHeight(),
                 getScaleX(), getScaleY(),
                 getRotation());
+    }
+
+    @Override
+    public void drawDebug(ShapeRenderer shapes) {
+        super.drawDebug(shapes);
+        if (!getDebug()) return;
+        shapes.setColor(Color.GRAY);
+        shapes.rect(getX(), getY(), getWidth(), getHeight());
+        shapes.setColor(Color.RED);
+        shapes.circle(getX() + getOriginX(), getY() + getOriginY(), 10f);
+    }
+
+    public void startFalling() {
+        if(falling) return;
+
+        falling = true;
+
+        addAction(
+            Actions.moveBy(10, -getHeight(), 15f, Interpolation.fade));
+    }
+
+    public boolean isFalling() {
+        return falling;
+    }
+
+    public void reset() {
+        falling = false;
     }
 }
