@@ -32,6 +32,7 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -103,7 +104,6 @@ public class GameStage extends Stage {
         chain = new MoonChain(manager);
         player = new Player(manager);
         moon = new Moon(manager);
-        boss = new Boss(manager);
 
         levelDebugRenderer = new LevelDebugRenderer();
         screenLogger = new StringBuilder();
@@ -301,6 +301,13 @@ public class GameStage extends Stage {
     private void logPoisitions() {
     	if(!debug) return;
     	
+    	vlog(String.format("Camera [x:%.0f, y:%.0f, width:%.0f, height:%.0f]", getCamera().position.x, getCamera().position.y, getCamera().viewportWidth, getCamera().viewportHeight));
+    	vlog(String.format("Stage [width:%.0f, height:%.0f]", getWidth(), getHeight()));
+    	vlog(String.format("Screen [width:%d, height:%d]", getViewport().getScreenWidth(), getViewport().getScreenHeight()));
+    	
+    	if(wallIndex < currentLevel.enemySpawnWallList.size())
+    		vlog(String.format("Current spawn wall [index: %d, x: %d]", wallIndex, currentLevel.enemySpawnWallList.get(wallIndex).spawnWallX));
+    	
     	for(Actor entity : getActors()) {
     		String tag = (entity instanceof Player) ? "Player" :
     			(entity instanceof Enemy) ? "Enemy" :
@@ -400,6 +407,7 @@ public class GameStage extends Stage {
                 addActor(newEnemy);
             }
             else if(spawn.enemyId == 100) {
+            	boss = new Boss(manager);
                 Vector2 spawnPoint = new Vector2();
                 spawnPoint.y = getHeight() / 2;
                 switch (spawn.location) {
@@ -412,11 +420,17 @@ public class GameStage extends Stage {
                 }
 
                 screenToStageCoordinates(spawnPoint);
-                boss.setPosition(spawnPoint.x, spawnPoint.y);
-                boss.setColor(1.0f, 1.0f, 1.0f, 0.0f);
-                boss.addAction(Actions.fadeIn(0.5f));
+                boss.setPosition(spawnPoint.x + (getViewport().getScreenWidth() * 0.5f), spawnPoint.y);
+                boss.addAction(
+                	Actions.sequence(
+            		Actions.moveTo(spawnPoint.x, spawnPoint.y, 3f, Interpolation.fade),
+            		Actions.run(new Runnable() {
+						@Override
+						public void run() {
+							boss.startBattle();
+						}
+            		})));
                 addActor(boss);
-                boss.startBattle();
             }
 
             offsetY += 100;

@@ -111,6 +111,8 @@ public class Boss extends Actor {
     public void drawDebug(ShapeRenderer shapes) {
         if (!getDebug()) return;
         shapes.set(ShapeRenderer.ShapeType.Line);
+        shapes.setColor(Color.GRAY);
+        shapes.rect(getX(), getY(), getWidth(), getHeight());
         shapes.setColor(Color.GREEN);
         shapes.rect(collisionArea.x, collisionArea.y, collisionArea.width, collisionArea.height);
         shapes.setColor(Color.RED);
@@ -124,19 +126,25 @@ public class Boss extends Actor {
     public void startBattle() {
         Vector2 pointA = new Vector2(getStage().getViewport().getScreenWidth() * 0.7f, getStage().getViewport().getScreenHeight() / 2f);
         Vector2 pointB = new Vector2(getStage().getViewport().getScreenWidth() * 0.05f, getStage().getViewport().getScreenHeight() / 2f);
-        //Vector2 pointC = new Vector2();
-        //Vector2 pointD = new Vector2();
+        Vector2 pointC = new Vector2(getStage().getViewport().getScreenWidth() * 0.05f, getStage().getViewport().getScreenHeight() * 0.95f);
+        Vector2 pointD = new Vector2(getStage().getViewport().getScreenWidth() * 0.7f, getStage().getViewport().getScreenHeight() * 0.95f);
         
         getStage().screenToStageCoordinates(pointA);
         getStage().screenToStageCoordinates(pointB);
+        getStage().screenToStageCoordinates(pointC);
+        getStage().screenToStageCoordinates(pointD);
 
         addAction(
             forever(
                 sequence(
                     Actions.delay(3f),
-                    Actions.moveTo(pointA.x, pointA.y, 5f, Interpolation.swingIn),
+                    Actions.moveTo(pointA.x, pointA.y, 1f, Interpolation.exp10In),
                     Actions.delay(3f),
-                    Actions.moveTo(pointB.x, pointB.y, 5f, Interpolation.swingIn)
+                    Actions.moveTo(pointB.x, pointB.y, 3f, Interpolation.swingIn),
+                    Actions.delay(3f),
+                    Actions.moveTo(pointC.x, pointC.y, 1f, Interpolation.exp10In),
+                    Actions.delay(3f),
+                    Actions.moveTo(pointD.x, pointD.y, 3f, Interpolation.swingIn)
                 )
             ));
     }

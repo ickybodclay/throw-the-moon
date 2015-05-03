@@ -72,6 +72,8 @@ public class Moon extends Actor {
     public void drawDebug(ShapeRenderer shapes) {
         super.drawDebug(shapes);
         if (!getDebug()) return;
+        shapes.setColor(Color.GRAY);
+        shapes.rect(getX(), getY(), getWidth(), getHeight());
         shapes.setColor(Color.RED);
         shapes.circle(getX() + getOriginX(), getY() + getOriginY(), 10f);
     }

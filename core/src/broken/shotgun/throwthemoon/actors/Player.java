@@ -216,6 +216,8 @@ public class Player extends Actor {
     public void drawDebug(ShapeRenderer shapes) {
         if (!getDebug()) return;
         shapes.set(ShapeRenderer.ShapeType.Line);
+        shapes.setColor(Color.GRAY);
+        shapes.rect(getX(), getY(), getWidth(), getHeight());
         shapes.setColor(Color.GREEN);
         shapes.rect(collisionArea.x, collisionArea.y, collisionArea.width, collisionArea.height);
         shapes.setColor(Color.RED);

@@ -39,11 +39,8 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.addAction;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.color;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.forever;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.moveBy;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.parallel;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
@@ -113,6 +110,8 @@ public class Enemy extends Actor {
     public void drawDebug(ShapeRenderer shapes) {
         if (!getDebug()) return;
         shapes.set(ShapeRenderer.ShapeType.Line);
+        shapes.setColor(Color.GRAY);
+        shapes.rect(getX(), getY(), getWidth(), getHeight());
         shapes.setColor(Color.GREEN);
         shapes.rect(collisionArea.x, collisionArea.y, collisionArea.width, collisionArea.height);
     }
