@@ -31,7 +31,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
 public class Background extends Actor {
-    private static final String TEXTURE_FILENAME = "background/layers/layer-2.png"; //"background/full-bg.png";
+    private static final String TEXTURE_FILENAME = "background/layers/layer-2.png";
     private static final int TILE_COUNT = 5;
 
     private Texture texture;

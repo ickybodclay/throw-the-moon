@@ -29,9 +29,12 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.MusicLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -69,18 +72,21 @@ public class GameStage extends Stage {
     private Level currentLevel;
     private int wallIndex = 0;
     private Random random;
+    private boolean fadingOut;
 
     private Background background;
     private Player player;
     private Moon moon;
     private MoonChain chain;
     private Boss boss;
+    private Actor screenFadeActor;
 
     private final LevelDebugRenderer levelDebugRenderer;
     private final StringBuilder screenLogger;
     
     private final Batch uiBatch;
     private final BitmapFont font;
+    private final ShapeRenderer renderer;
 
     private Music music;
 
@@ -99,17 +105,23 @@ public class GameStage extends Stage {
         loadMusic();
 
         random = new Random(System.currentTimeMillis());
+        fadingOut = false;
 
         background = new Background(manager);
         chain = new MoonChain(manager);
         player = new Player(manager);
         moon = new Moon(manager);
+        
+        screenFadeActor = new Actor();
+        screenFadeActor.setBounds(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        screenFadeActor.setColor(Color.CLEAR);
 
         levelDebugRenderer = new LevelDebugRenderer();
         screenLogger = new StringBuilder();
         
         uiBatch = new SpriteBatch();
         font = new BitmapFont();
+        renderer = new ShapeRenderer();
 
         touchPoint = new Vector2();
 
@@ -277,7 +289,10 @@ public class GameStage extends Stage {
         
         logPoisitions();
 
-        if(isChainOffscreen()) {
+        if(isStageClear()){
+        	// do nothing
+        }
+        else if(isChainOffscreen()) {
             startGameOver();
         }
         else if(triggerSpawnWall(player.getX())) {
@@ -449,6 +464,18 @@ public class GameStage extends Stage {
     public void draw() {
         super.draw();
         
+        if(isStageClear()) {
+        	renderer.begin(ShapeType.Filled);
+        	renderer.setColor(screenFadeActor.getColor());
+        	renderer.rect(
+    			screenFadeActor.getX(), screenFadeActor.getY(), 
+    			screenFadeActor.getOriginX(), screenFadeActor.getOriginY(),
+    			screenFadeActor.getWidth(), screenFadeActor.getHeight(),
+    			screenFadeActor.getScaleX(), screenFadeActor.getScaleY(), 
+    			screenFadeActor.getRotation());
+        	renderer.end();
+        }
+        
         if(debug) {
 	        uiBatch.begin();
 			font.draw(uiBatch, screenLogger.toString(), 50, 200);
@@ -462,6 +489,7 @@ public class GameStage extends Stage {
         super.dispose();
         uiBatch.dispose();
         font.dispose();
+        renderer.dispose();
     }
 
     @Override
@@ -486,6 +514,8 @@ public class GameStage extends Stage {
         addActor(chain);
         addActor(player);
         addActor(levelDebugRenderer);
+        
+        screenFadeActor.setColor(Color.CLEAR);
 
         levelDebugRenderer.setLevel(currentLevel);
 
@@ -513,4 +543,33 @@ public class GameStage extends Stage {
     private void vlog(String line) {
     	screenLogger.append(line + "\n");
     }
+
+	public boolean isStageClear() {
+		return boss != null && boss.isDefeated();
+	}
+	
+	public void stopMusic() {
+		music.stop();
+	}
+	
+	public Actor getScreenFadeActor() {
+		return screenFadeActor;
+	}
+
+	public void fadeOut(Runnable runnable) {
+		if(fadingOut) return;
+		
+		fadingOut = true;
+		
+		addActor(screenFadeActor);
+		
+		screenFadeActor.addAction(
+    			Actions.sequence(
+					Actions.color(Color.BLACK, 5f), 
+					Actions.run(runnable)));
+	}
+
+	public boolean isFadingOut() {
+		return fadingOut;
+	}
 }

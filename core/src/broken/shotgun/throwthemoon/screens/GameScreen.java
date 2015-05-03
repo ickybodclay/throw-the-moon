@@ -55,7 +55,16 @@ public class GameScreen implements Screen {
         stage.draw();
         stage.act(delta);
 
-        if(stage.isGameOver()) {
+        if(stage.isStageClear() && !stage.isFadingOut()) {
+        	stage.stopMusic();
+        	stage.fadeOut((new Runnable() {
+				@Override
+				public void run() {
+					game.setScreen(new StageClearScreen(game));
+				}
+			}));
+        }
+        else if(stage.isGameOver()) {
             stage.resetLevel();
         }
     }

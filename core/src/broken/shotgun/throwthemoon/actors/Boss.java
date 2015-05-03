@@ -43,7 +43,6 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.color;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.forever;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.parallel;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 
@@ -65,6 +64,8 @@ public class Boss extends Actor {
     private final Rectangle collisionArea;
 
     private int health;
+    private boolean raging;
+    private Color color;
 
     public Boss(final AssetManager manager) {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
@@ -88,7 +89,10 @@ public class Boss extends Actor {
 
         collisionArea = new Rectangle(getX(), getY() + 80, (int) getWidth(), (int) getHeight() - 170);
 
-        health = 5;
+        health = 50;
+        raging = false;
+        color = Color.WHITE;
+        setColor(color);
     }
 
     @Override
@@ -158,19 +162,33 @@ public class Boss extends Actor {
             die();
             return;
         }
+        
+        if (health <= 20) {
+        	rage();
+        }
 
-        addAction(
-            sequence(
-                parallel(
-                    Actions.moveBy(20 * direction, 0, 0.3f, Interpolation.circleOut), sequence(color(Color.BLACK, 0.15f), color(Color.WHITE, 0.15f))),
-                    Actions.moveTo(getX(), getY(), 0.1f, Interpolation.circleIn)));
+        addAction(sequence(color(Color.BLACK, 0.15f), color(color, 0.15f)));
     }
 
-    public void die() {
+    private void rage() {
+		if(raging) return;
+		
+		raging = true;
+		
+		color = Color.RED;
+		
+		addAction(color(Color.RED, 1f));
+	}
+
+	private void die() {
         clearActions();
         addAction(
             sequence(
                 fadeOut(0.4f, Interpolation.fade),
                 removeActor()));
     }
+	
+	public boolean isDefeated() {
+		return health <= 0;
+	}
 }
