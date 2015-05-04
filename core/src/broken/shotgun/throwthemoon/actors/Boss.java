@@ -66,6 +66,7 @@ public class Boss extends Actor {
     private int health;
     private boolean raging;
     private Color color;
+    private boolean flipX;
 
     public Boss(final AssetManager manager) {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
@@ -93,6 +94,7 @@ public class Boss extends Actor {
         raging = false;
         color = Color.WHITE;
         setColor(color);
+        flipX = false;
     }
 
     @Override
@@ -107,7 +109,12 @@ public class Boss extends Actor {
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
         batch.setColor(getColor());
-        batch.draw(currentFrame, getX(), getY(), getOriginX(), getOriginY(), getWidth(), getHeight(), getScaleX(), getScaleY(), getRotation());
+        batch.draw(currentFrame, 
+    		getX(), getY(), 
+    		getOriginX(), getOriginY(), 
+    		getWidth(), getHeight(), 
+    		flipX ? getScaleX() : -getScaleX(), getScaleY(), 
+    		getRotation());
         batch.setColor(Color.WHITE);
     }
 
@@ -145,10 +152,20 @@ public class Boss extends Actor {
                     Actions.moveTo(pointA.x, pointA.y, 1f, Interpolation.exp10In),
                     Actions.delay(3f),
                     Actions.moveTo(pointB.x, pointB.y, 3f, Interpolation.swingIn),
+                    Actions.run(new Runnable() {
+						@Override
+						public void run() {
+							flipX = true;
+						}}),
                     Actions.delay(3f),
                     Actions.moveTo(pointC.x, pointC.y, 1f, Interpolation.exp10In),
                     Actions.delay(3f),
-                    Actions.moveTo(pointD.x, pointD.y, 3f, Interpolation.swingIn)
+                    Actions.moveTo(pointD.x, pointD.y, 3f, Interpolation.swingIn),
+                    Actions.run(new Runnable() {
+						@Override
+						public void run() {
+							flipX = false;
+						}})
                 )
             ));
     }
@@ -167,7 +184,7 @@ public class Boss extends Actor {
         	rage();
         }
 
-        addAction(sequence(color(Color.BLACK, 0.15f), color(color, 0.15f)));
+        addAction(sequence(color(Color.BLACK, 0.10f), color(color, 0.10f)));
     }
 
     private void rage() {
