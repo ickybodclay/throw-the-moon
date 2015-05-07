@@ -194,7 +194,42 @@ public class Boss extends Actor {
 		
 		color = Color.RED;
 		
+		clearActions();
 		addAction(color(Color.RED, 1f));
+		
+		Vector2 pointA = new Vector2(getStage().getViewport().getScreenWidth() * 0.7f, getStage().getViewport().getScreenHeight() / 2f);
+        Vector2 pointB = new Vector2(getStage().getViewport().getScreenWidth() * 0.05f, getStage().getViewport().getScreenHeight() / 2f);
+        Vector2 pointC = new Vector2(getStage().getViewport().getScreenWidth() * 0.05f, getStage().getViewport().getScreenHeight() * 0.95f);
+        Vector2 pointD = new Vector2(getStage().getViewport().getScreenWidth() * 0.7f, getStage().getViewport().getScreenHeight() * 0.95f);
+        
+        getStage().screenToStageCoordinates(pointA);
+        getStage().screenToStageCoordinates(pointB);
+        getStage().screenToStageCoordinates(pointC);
+        getStage().screenToStageCoordinates(pointD);
+		
+		addAction(
+	            forever(
+	                sequence(
+	                    Actions.delay(1f),
+	                    Actions.moveTo(pointA.x, pointA.y, 1f, Interpolation.swingIn),
+	                    Actions.delay(1f),
+	                    Actions.moveTo(pointC.x, pointC.y, 2f, Interpolation.exp10In),
+	                    Actions.run(new Runnable() {
+							@Override
+							public void run() {
+								flipX = true;
+							}}),
+	                    Actions.delay(1f),
+	                    Actions.moveTo(pointB.x, pointB.y, 1f, Interpolation.swingIn),
+	                    Actions.delay(1f),
+	                    Actions.moveTo(pointD.x, pointD.y, 2f, Interpolation.exp10In),
+	                    Actions.run(new Runnable() {
+							@Override
+							public void run() {
+								flipX = false;
+							}})
+	                )
+	            ));
 	}
 
 	private void die() {
