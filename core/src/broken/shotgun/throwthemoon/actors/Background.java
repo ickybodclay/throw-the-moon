@@ -23,18 +23,27 @@
  */
 package broken.shotgun.throwthemoon.actors;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.TextureLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.Animation.PlayMode;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.utils.TiledDrawable;
 
 public class Background extends Actor {
-    private static final String TEXTURE_FILENAME = "background/layers/layer-2.png";
-    private static final int TILE_COUNT = 5;
+    private static final String TEXTURE_FILENAME = "bg_tiles.png";
+    private static final int FRAME_WIDTH = 256;
+    private static final int FRAME_HEIGHT = 256;
 
-    private Texture texture;
+    private final Texture texture;
+    private final Animation animation;
+    private final TiledDrawable background;
+    private float stateTime = 0f;
 
     public Background(AssetManager manager) {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
@@ -42,24 +51,27 @@ public class Background extends Actor {
         manager.finishLoading();
 
         texture = manager.get(TEXTURE_FILENAME);
-        texture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.ClampToEdge);
-        setWidth(texture.getWidth() * TILE_COUNT);
-        setHeight(texture.getHeight());
+        
+        TextureRegion[] frames = TextureRegion.split(texture, FRAME_WIDTH, FRAME_HEIGHT)[0];
+        animation = new Animation(0.1f, frames[0], frames[1], frames[2]);
+        animation.setPlayMode(PlayMode.LOOP);
+        
+        setWidth(FRAME_WIDTH);
+        setHeight(FRAME_HEIGHT);
+        
+        background = new TiledDrawable(animation.getKeyFrame(0f));
     }
 
     @Override
     public void act(float delta) {
         super.act(delta);
+        background.setRegion(animation.getKeyFrame(stateTime));
+        stateTime += delta;
     }
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
-        batch.draw(texture,
-                0, 0, // x, y
-                getWidth(), // width
-                getHeight(), // height
-                0, 1, // u, v
-                TILE_COUNT, 0); // u2, v2
+        background.draw(batch, getX(), getY(), getWidth(), getHeight());
     }
 }

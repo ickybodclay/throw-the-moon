@@ -548,7 +548,8 @@ public class GameStage extends Stage {
 
         levelDebugRenderer.setLevel(currentLevel);
 
-        // reset player position and add back to stage
+        background.setWidth(WIDTH * 5);
+        background.setHeight(HEIGHT);
         player.setPosition((WIDTH / 8), (HEIGHT / 2));
         player.reset();
         moon.setPosition((WIDTH / 2) - (moon.getWidth() / 2), HEIGHT);
