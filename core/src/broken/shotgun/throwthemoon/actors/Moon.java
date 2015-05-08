@@ -84,6 +84,7 @@ public class Moon extends Actor {
         if(falling) return;
 
         falling = true;
+        distance = 0;
 
         addAction(
             Actions.moveBy(10, -getHeight(), 10f, Interpolation.fade));
@@ -104,7 +105,7 @@ public class Moon extends Actor {
      * @return true if distance if less than or equal to 1
      */
     public boolean shouldStartFalling() {
-    	return distance <= 1;
+    	return distance <= 0;
     }
 
 	public void addDistance(float velocityY) {

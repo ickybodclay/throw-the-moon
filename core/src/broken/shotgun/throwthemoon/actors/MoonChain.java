@@ -127,4 +127,8 @@ public class MoonChain extends Actor {
 	public void animatePull() {
 		addAction(sequence(color(Color.GRAY, 0.10f), color(Color.WHITE, 0.10f)));
 	}
+
+	public void hintPullChain() {
+		addAction(sequence(color(Color.GRAY, 0.40f), color(Color.WHITE, 0.40f), color(Color.GRAY, 0.40f), color(Color.WHITE, 0.40f), color(Color.GRAY, 0.40f), color(Color.WHITE, 0.40f)));
+	}
 }

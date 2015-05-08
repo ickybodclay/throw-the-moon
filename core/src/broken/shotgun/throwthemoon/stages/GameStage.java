@@ -97,7 +97,6 @@ public class GameStage extends Stage {
     private final Vector2 touchPoint;
 
     private static final float SCROLL_SCREEN_PERCENT_TRIGGER = 0.6f;
-	protected static final float MOON_THROW_Y_THRESHOLD = -2000f;
     private float playerScreenX = 0.0f;
 
     public GameStage(final AssetManager manager) {
@@ -184,7 +183,7 @@ public class GameStage extends Stage {
 			@Override
 			public void fling(InputEvent event, float velocityX, float velocityY, int button) {
 				Gdx.app.log("GameStage", String.format("fling velocityX:%.2f velocityY:%.2f", velocityX, velocityY));
-				if(player.isMoonThrowEnabled() && velocityY <= MOON_THROW_Y_THRESHOLD && chain.isAttached() && event.getTarget() instanceof MoonChain) {
+				if(player.isMoonThrowEnabled() && velocityY < 0 && chain.isAttached() && event.getTarget() instanceof MoonChain) {
 					moon.addDistance(velocityY);
 					chain.animatePull();
 				}
@@ -474,7 +473,9 @@ public class GameStage extends Stage {
 						}
             		})));
                 addActor(boss);
+                addActor(moon);
                 player.enableMoonThrow();
+                chain.hintPullChain();
             }
 
             offsetY += 100;
@@ -539,7 +540,6 @@ public class GameStage extends Stage {
     public void resetLevel() {
         getActors().clear();
         addActor(background);
-        addActor(moon);
         addActor(chain);
         addActor(player);
         addActor(levelDebugRenderer);
@@ -551,7 +551,7 @@ public class GameStage extends Stage {
         // reset player position and add back to stage
         player.setPosition((WIDTH / 8), (HEIGHT / 2));
         player.reset();
-        moon.setPosition((WIDTH / 2) - (moon.getWidth() / 2), HEIGHT - 100);
+        moon.setPosition((WIDTH / 2) - (moon.getWidth() / 2), HEIGHT);
         moon.reset();
         chain.attachTail(player);
 
@@ -589,7 +589,7 @@ public class GameStage extends Stage {
     }
 
 	public boolean isStageClear() {
-		return boss != null && boss.isDefeated();
+		return moon.getDistance() <= 0;
 	}
 	
 	public void stopMusic() {

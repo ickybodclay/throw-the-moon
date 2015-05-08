@@ -260,10 +260,7 @@ public class Boss extends Actor {
 
 	private void die() {
         clearActions();
-        addAction(
-            sequence(
-                fadeOut(0.4f, Interpolation.fade),
-                removeActor()));
+        addAction(color(Color.BLACK, 1f));
     }
 	
 	public boolean isDefeated() {
