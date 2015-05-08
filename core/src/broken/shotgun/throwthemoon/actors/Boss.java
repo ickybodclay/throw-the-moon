@@ -212,6 +212,11 @@ public class Boss extends Actor {
 	                sequence(
 	                    Actions.delay(1f),
 	                    Actions.moveTo(pointA.x, pointA.y, 1f, Interpolation.swingIn),
+	                    Actions.run(new Runnable() {
+							@Override
+							public void run() {
+								flipX = false;
+							}}),
 	                    Actions.delay(1f),
 	                    Actions.moveTo(pointC.x, pointC.y, 2f, Interpolation.exp10In),
 	                    Actions.run(new Runnable() {
@@ -227,6 +232,27 @@ public class Boss extends Actor {
 							@Override
 							public void run() {
 								flipX = false;
+							}}),
+						Actions.delay(1f),
+						Actions.moveTo(pointC.x, pointC.y, 2f, Interpolation.exp10In),
+	                    Actions.run(new Runnable() {
+							@Override
+							public void run() {
+								flipX = true;
+							}}),
+						Actions.delay(1f),
+	                    Actions.moveTo(pointA.x, pointA.y, 1f, Interpolation.swingIn),
+	                    Actions.run(new Runnable() {
+							@Override
+							public void run() {
+								flipX = false;
+							}}),
+						Actions.delay(1f),
+	                    Actions.moveTo(pointB.x, pointB.y, 1f, Interpolation.swingIn),
+	                    Actions.run(new Runnable() {
+							@Override
+							public void run() {
+								flipX = true;
 							}})
 	                )
 	            ));

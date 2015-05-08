@@ -36,10 +36,12 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 
 public class Moon extends Actor {
+	private static final int DISTANCE_TO_EARTH_IN_MILES = 238900;
     private static final String TEXTURE_FILENAME = "moon.png";
     private final Texture texture;
     private TextureRegion currentFrame;
     private boolean falling;
+    private int distance;
 
     public Moon(final AssetManager manager) {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
@@ -54,7 +56,7 @@ public class Moon extends Actor {
         setHeight(currentFrame.getRegionHeight());
         setOrigin(getWidth() / 2, getHeight() / 2);
 
-        falling = false;
+        reset(); 
     }
 
     @Override
@@ -84,7 +86,7 @@ public class Moon extends Actor {
         falling = true;
 
         addAction(
-            Actions.moveBy(10, -getHeight(), 15f, Interpolation.fade));
+            Actions.moveBy(10, -getHeight(), 10f, Interpolation.fade));
     }
 
     public boolean isFalling() {
@@ -92,6 +94,24 @@ public class Moon extends Actor {
     }
 
     public void reset() {
+    	clearActions();
         falling = false;
+        distance = DISTANCE_TO_EARTH_IN_MILES;
     }
+    
+    /**
+     * Determines when moon fall animation should happen.
+     * @return true if distance if less than or equal to 1
+     */
+    public boolean shouldStartFalling() {
+    	return distance <= 1;
+    }
+
+	public void addDistance(float velocityY) {
+		distance += velocityY;
+	}
+
+	public int getDistance() {
+		return distance;
+	}
 }
