@@ -35,6 +35,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Interpolation;
@@ -88,8 +89,8 @@ public class GameStage extends Stage {
     private final StringBuilder screenLogger;
     
     private final Batch uiBatch;
-    private final BitmapFont font;
     private final ShapeRenderer renderer;
+    private BitmapFont font;
 
     private Music music;
     private Sound tvOnSfx;
@@ -108,6 +109,8 @@ public class GameStage extends Stage {
 
         loadSounds();
 
+        loadFont();
+
         random = new Random(System.currentTimeMillis());
         fadingOut = false;
 
@@ -124,7 +127,6 @@ public class GameStage extends Stage {
         screenLogger = new StringBuilder();
         
         uiBatch = new SpriteBatch();
-        font = new BitmapFont();
         renderer = new ShapeRenderer();
 
         touchPoint = new Vector2();
@@ -250,6 +252,14 @@ public class GameStage extends Stage {
                 return super.keyUp(event, keycode);
             }
         });
+    }
+
+    private void loadFont() {
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/anonymous_pro_b.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        parameter.size = 20;
+        font = generator.generateFont(parameter);
+        generator.dispose();
     }
 
     /*
@@ -523,7 +533,7 @@ public class GameStage extends Stage {
         
         if(debug) {
 	        uiBatch.begin();
-			font.draw(uiBatch, screenLogger.toString(), 50, 200);
+			font.draw(uiBatch, screenLogger.toString(), 50, 300);
 			screenLogger.setLength(0);
 			uiBatch.end();
         }

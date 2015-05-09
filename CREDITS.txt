@@ -1,6 +1,9 @@
 Music by
 (c) Malcolm Brown 2015
 
-FREE SPACE UNIVERSE BACKGROUND for game developers.
-Get more game assets (game characters, backgrounds, game kits, and other game arts) at:
-http://bevouliin.com
+Copyright (c) 2009, Mark Simonson (http://www.ms-studio.com, mark@marksimonson.com),
+with Reserved Font Name Anonymous Pro.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
