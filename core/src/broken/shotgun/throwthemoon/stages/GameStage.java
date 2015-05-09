@@ -632,6 +632,8 @@ public class GameStage extends Stage {
 		fadingOut = true;
 		
 		moon.startFalling();
+
+        screenFadeActor.setColor(Color.CLEAR);
 		
 		addActor(screenFadeActor);
 		
