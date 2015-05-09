@@ -258,7 +258,7 @@ public class Boss extends Actor {
 
 	private void die() {
         clearActions();
-        addAction(forever(sequence(color(Color.BLACK, 0.5f), color(Color.GRAY, 0.5f))));
+        addAction(color(Color.BLACK, 0.5f));
     }
 	
 	public boolean isDefeated() {
