@@ -461,7 +461,7 @@ public class GameStage extends Stage {
             if(spawn.enemyId == 0) {
                 Enemy newEnemy = new Enemy(manager);
                 Vector2 spawnPoint = new Vector2();
-                spawnPoint.y = offsetY + random.nextInt((int) newEnemy.getHeight());
+                spawnPoint.y = offsetY + (getViewport().getScreenHeight() / spawnList.size());
                 switch (spawn.location) {
                     case FRONT:
                         spawnPoint.x = getViewport().getScreenWidth() * 0.8f;
@@ -472,13 +472,14 @@ public class GameStage extends Stage {
                 }
 
                 screenToStageCoordinates(spawnPoint);
-                newEnemy.setPosition(spawnPoint.x, spawnPoint.y);
+                newEnemy.setPosition(spawnPoint.x, spawnPoint.y + (newEnemy.getHeight() / 2));
                 newEnemy.setColor(1.0f, 1.0f, 1.0f, 0.0f);
                 newEnemy.addAction(Actions.fadeIn(0.5f));
                 addActor(newEnemy);
+                offsetY += (getViewport().getScreenHeight() / spawnList.size());
             }
             else if(spawn.enemyId == 100) {
-            	boss = new Boss(manager);
+                boss = new Boss(manager);
                 Vector2 spawnPoint = new Vector2();
                 spawnPoint.y = (getViewport().getScreenHeight() / 2);
                 switch (spawn.location) {
@@ -493,21 +494,19 @@ public class GameStage extends Stage {
                 screenToStageCoordinates(spawnPoint);
                 boss.setPosition(spawnPoint.x + (getViewport().getScreenWidth() * 0.5f), spawnPoint.y - (boss.getHeight() / 2));
                 boss.addAction(
-                	Actions.sequence(
-            		Actions.moveTo(spawnPoint.x, spawnPoint.y - (boss.getHeight() / 2), 3f, Interpolation.fade),
-            		Actions.run(new Runnable() {
-						@Override
-						public void run() {
-							boss.startBattle();
-						}
-            		})));
+                        Actions.sequence(
+                                Actions.moveTo(spawnPoint.x, spawnPoint.y - (boss.getHeight() / 2), 3f, Interpolation.fade),
+                                Actions.run(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        boss.startBattle();
+                                    }
+                                })));
                 addActor(boss);
                 addActor(moon);
                 player.enableMoonThrow();
                 chain.hintPullChain();
             }
-
-            offsetY += 100;
         }
     }
 
