@@ -204,6 +204,11 @@ public class GameStage extends Stage {
                             moon.startFalling();
                         }
                         break;
+                    case Input.Keys.K:
+                        if(debug) {
+                            clearAllEnemies();
+                        }
+                        break;
                     case Input.Keys.SPACE:
                         attackCounter++;
                         player.performAttack(attackCounter);
@@ -246,7 +251,19 @@ public class GameStage extends Stage {
         });
     }
 
-    private void loadSounds() {
+    /*
+     * For debugging only: removes all enemy actors from the screen.
+     */
+    private void clearAllEnemies() {
+    	for(Actor entity : getActors()) {
+            if(entity instanceof Enemy) {
+            	entity.clearActions();
+            	entity.remove();
+            }
+    	}
+	}
+
+	private void loadSounds() {
         manager.setLoader(Music.class, new MusicLoader(new InternalFileHandleResolver()));
         manager.setLoader(Sound.class, new SoundLoader(new InternalFileHandleResolver()));
         manager.load(MUSIC_FILENAME, Music.class);
@@ -264,16 +281,6 @@ public class GameStage extends Stage {
         currentLevel.chapter = 1;
 
         int wallX = (int) (WIDTH * 0.75f);
-        
-        // boss
-        EnemySpawnWall bossSpawnWall = new EnemySpawnWall();
-        bossSpawnWall.spawnWallX = wallX;
-        EnemySpawn bossSpawn = new EnemySpawn();
-        bossSpawn.enemyId = 100;
-        bossSpawn.location = SpawnLocation.FRONT;
-        bossSpawnWall.enemySpawnList.add(bossSpawn);
-        currentLevel.enemySpawnWallList.add(bossSpawnWall);
-        wallX += (int) (WIDTH * 0.75f);
 
         for(int i=0; i<3; ++i) {
             EnemySpawnWall spawnWall = new EnemySpawnWall();
@@ -300,7 +307,14 @@ public class GameStage extends Stage {
             wallX += (int) (WIDTH * 0.75f);
         }
         
-        
+        // boss
+        EnemySpawnWall bossSpawnWall = new EnemySpawnWall();
+        bossSpawnWall.spawnWallX = wallX;
+        EnemySpawn bossSpawn = new EnemySpawn();
+        bossSpawn.enemyId = 100;
+        bossSpawn.location = SpawnLocation.FRONT;
+        bossSpawnWall.enemySpawnList.add(bossSpawn);
+        currentLevel.enemySpawnWallList.add(bossSpawnWall);
     }
 
     @Override
@@ -548,7 +562,7 @@ public class GameStage extends Stage {
 
         levelDebugRenderer.setLevel(currentLevel);
 
-        background.setWidth(WIDTH * 5);
+        background.setWidth(currentLevel.getBackgroundWidth((int) WIDTH));
         background.setHeight(HEIGHT);
         player.setPosition((WIDTH / 8), (HEIGHT / 2));
         player.reset();

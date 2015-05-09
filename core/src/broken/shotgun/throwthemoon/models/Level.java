@@ -33,4 +33,14 @@ public class Level {
     public Level() {
         enemySpawnWallList = new ArrayList<EnemySpawnWall>();
     }
+    
+    /**
+     * Convenience method to calculate background size based on position of the last spawn wall.
+     * @return width background should be to span the entire level
+     */
+    public int getBackgroundWidth(int screenWidth) {
+    	EnemySpawnWall lastWall = enemySpawnWallList.get(enemySpawnWallList.size() - 1);
+    	int screenSpans = lastWall.spawnWallX / screenWidth;
+    	return screenWidth * (screenSpans + 1);
+    }
 }
