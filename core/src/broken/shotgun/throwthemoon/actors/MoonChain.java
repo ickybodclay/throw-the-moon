@@ -24,6 +24,7 @@
 package broken.shotgun.throwthemoon.actors;
 
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.color;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.forever;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 
 import com.badlogic.gdx.assets.AssetManager;
@@ -52,6 +53,7 @@ public class MoonChain extends Actor {
     private Player attachedPlayer;
 
     private static final int TILE_COUNT = 50;
+    private boolean hinting = false;
 
     public MoonChain(final AssetManager manager) {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
@@ -143,4 +145,20 @@ public class MoonChain extends Actor {
 	public void hintPullChain() {
 		addAction(sequence(color(Color.GRAY, 0.40f), color(Color.WHITE, 0.40f), color(Color.GRAY, 0.40f), color(Color.WHITE, 0.40f), color(Color.GRAY, 0.40f), color(Color.WHITE, 0.40f)));
 	}
+
+    public void hintPullChainForever() {
+        if(hinting) return;
+        hinting = true;
+        addAction(forever(sequence(color(Color.GRAY, 0.40f), color(Color.WHITE, 0.40f))));
+    }
+
+    public boolean isHinting() {
+        return hinting;
+    }
+
+    public void reset() {
+        clearActions();
+        setColor(Color.WHITE);
+        hinting = false;
+    }
 }
