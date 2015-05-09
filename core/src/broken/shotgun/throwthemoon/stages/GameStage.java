@@ -338,6 +338,10 @@ public class GameStage extends Stage {
         
         logPoisitions();
 
+        if(boss != null && boss.isDefeated() && !chain.isHinting()) {
+            chain.hintPullChainForever();
+        }
+
         if(isStageClear()){
         	// do nothing
         }
@@ -579,6 +583,7 @@ public class GameStage extends Stage {
         player.reset();
         moon.setPosition((WIDTH / 2) - (moon.getWidth() / 2), HEIGHT);
         moon.reset();
+        chain.reset();
         chain.attachTail(player);
 
         playerScreenX = 0.0f;
@@ -620,10 +625,6 @@ public class GameStage extends Stage {
 	
 	public void stopMusic() {
 		music.stop();
-	}
-	
-	public Actor getScreenFadeActor() {
-		return screenFadeActor;
 	}
 
 	public void fadeOut(Runnable runnable) {
