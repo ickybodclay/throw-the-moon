@@ -139,7 +139,7 @@ public class GameStage extends Stage {
         addListener(new ActorGestureListener() {
             @Override
             public void touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                if (pointer == 0 && !(event.getTarget() instanceof Enemy || event.getTarget() instanceof Boss || event.getTarget() instanceof MoonChain)) {
+                if (pointer == 0 && !(event.getTarget() instanceof Enemy || event.getTarget() instanceof Boss || (boss != null && event.getTarget() instanceof MoonChain))) {
                     player.moveTo(touchPoint.set(x, y));
                 }
 
@@ -159,7 +159,7 @@ public class GameStage extends Stage {
 
             @Override
             public void pan(InputEvent event, float x, float y, float deltaX, float deltaY) {
-            	if(!(event.getTarget() instanceof MoonChain)) {
+            	if(boss == null || (boss != null && !(event.getTarget() instanceof MoonChain))) {
             		player.moveTo(touchPoint.set(x, y));
             	}
 
@@ -184,7 +184,8 @@ public class GameStage extends Stage {
 			public void fling(InputEvent event, float velocityX, float velocityY, int button) {
 				Gdx.app.log("GameStage", String.format("fling velocityX:%.2f velocityY:%.2f", velocityX, velocityY));
 				if(player.isMoonThrowEnabled() && velocityY < 0 && chain.isAttached() && event.getTarget() instanceof MoonChain) {
-					moon.addDistance(velocityY);
+					int multiplier = (boss != null && boss.isDefeated()) ? 10 : 2;
+					moon.addDistance(velocityY * multiplier);
 					chain.animatePull();
 				}
 				super.fling(event, velocityX, velocityY, button);

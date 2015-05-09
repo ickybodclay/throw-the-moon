@@ -41,9 +41,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.color;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.forever;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 
 public class Boss extends Actor {
@@ -260,7 +258,7 @@ public class Boss extends Actor {
 
 	private void die() {
         clearActions();
-        addAction(color(Color.BLACK, 1f));
+        addAction(forever(sequence(color(Color.BLACK, 0.5f), color(Color.GRAY, 0.5f))));
     }
 	
 	public boolean isDefeated() {

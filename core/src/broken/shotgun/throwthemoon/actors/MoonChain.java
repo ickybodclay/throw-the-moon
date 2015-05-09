@@ -43,11 +43,11 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 
 public class MoonChain extends Actor {
     private static final String TEXTURE_FILENAME = "chain.png";
-    private static final String SFX_CHAIN_PULL_FILENAME = "";
+    private static final String SFX_CHAIN_PULL_FILENAME = "sfx/chain_rattle.mp3";
     private final Texture texture;
     private final Rectangle collisionArea;
     private final Vector2 position;
-    //private final Sound chainPullSfx;
+    private final Sound chainPullSfx;
 
     private Player attachedPlayer;
 
@@ -57,13 +57,13 @@ public class MoonChain extends Actor {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
         manager.setLoader(Sound.class, new SoundLoader(new InternalFileHandleResolver()));
         manager.load(TEXTURE_FILENAME, Texture.class);
-        //manager.load(SFX_CHAIN_PULL_FILENAME, Sound.class);
+        manager.load(SFX_CHAIN_PULL_FILENAME, Sound.class);
         manager.finishLoading();
 
         texture = manager.get(TEXTURE_FILENAME);
         texture.setWrap(Texture.TextureWrap.ClampToEdge, Texture.TextureWrap.Repeat);
         
-        //chainPullSfx = manager.get(SFX_CHAIN_PULL_FILENAME);
+        chainPullSfx = manager.get(SFX_CHAIN_PULL_FILENAME);
 
         setWidth(texture.getWidth());
         setHeight(texture.getHeight() * TILE_COUNT);
@@ -137,7 +137,7 @@ public class MoonChain extends Actor {
 		float volume = 1f; // [0.0, 1.0]
 		float pitch = 1f; // [0.5. 2.0]
 		float pan = 0f; // [-1, 1]
-		//chainPullSfx.play(volume, pitch, pan);
+		chainPullSfx.play(volume, pitch, pan);
 	}
 
 	public void hintPullChain() {
