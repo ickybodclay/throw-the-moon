@@ -480,7 +480,7 @@ public class GameStage extends Stage {
             else if(spawn.enemyId == 100) {
             	boss = new Boss(manager);
                 Vector2 spawnPoint = new Vector2();
-                spawnPoint.y = getHeight() / 2;
+                spawnPoint.y = (getViewport().getScreenHeight() / 2);
                 switch (spawn.location) {
                     case FRONT:
                         spawnPoint.x = getViewport().getScreenWidth() * 0.7f;
@@ -491,10 +491,10 @@ public class GameStage extends Stage {
                 }
 
                 screenToStageCoordinates(spawnPoint);
-                boss.setPosition(spawnPoint.x + (getViewport().getScreenWidth() * 0.5f), spawnPoint.y);
+                boss.setPosition(spawnPoint.x + (getViewport().getScreenWidth() * 0.5f), spawnPoint.y - (boss.getHeight() / 2));
                 boss.addAction(
                 	Actions.sequence(
-            		Actions.moveTo(spawnPoint.x, spawnPoint.y, 3f, Interpolation.fade),
+            		Actions.moveTo(spawnPoint.x, spawnPoint.y - (boss.getHeight() / 2), 3f, Interpolation.fade),
             		Actions.run(new Runnable() {
 						@Override
 						public void run() {
