@@ -27,12 +27,15 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.MusicLoader;
+import com.badlogic.gdx.assets.loaders.SoundLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Interpolation;
@@ -63,6 +66,7 @@ import static broken.shotgun.throwthemoon.ThrowTheMoonGame.isDebug;
 
 public class GameStage extends Stage {
     private static final String MUSIC_FILENAME = "SnestedLoops.ogg";
+    private static final String SFX_TV_ON_FILENAME = "sfx/tv_turn_on.mp3";
     private static final float WIDTH = 1920f;
     private static final float HEIGHT = 1080f;
     private boolean debug;
@@ -85,10 +89,11 @@ public class GameStage extends Stage {
     private final StringBuilder screenLogger;
     
     private final Batch uiBatch;
-    private final BitmapFont font;
     private final ShapeRenderer renderer;
+    private BitmapFont font;
 
     private Music music;
+    private Sound tvOnSfx;
 
     private final Vector2 touchPoint;
 
@@ -102,7 +107,9 @@ public class GameStage extends Stage {
 
         loadLevel();
 
-        loadMusic();
+        loadSounds();
+
+        loadFont();
 
         random = new Random(System.currentTimeMillis());
         fadingOut = false;
@@ -120,7 +127,6 @@ public class GameStage extends Stage {
         screenLogger = new StringBuilder();
         
         uiBatch = new SpriteBatch();
-        font = new BitmapFont();
         renderer = new ShapeRenderer();
 
         touchPoint = new Vector2();
@@ -135,7 +141,7 @@ public class GameStage extends Stage {
         addListener(new ActorGestureListener() {
             @Override
             public void touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                if (pointer == 0 && !(event.getTarget() instanceof Enemy || event.getTarget() instanceof Boss)) {
+                if (pointer == 0 && !(event.getTarget() instanceof Enemy || event.getTarget() instanceof Boss || (boss != null && event.getTarget() instanceof MoonChain))) {
                     player.moveTo(touchPoint.set(x, y));
                 }
 
@@ -155,7 +161,9 @@ public class GameStage extends Stage {
 
             @Override
             public void pan(InputEvent event, float x, float y, float deltaX, float deltaY) {
-                player.moveTo(touchPoint.set(x, y));
+            	if(boss == null || (boss != null && !(event.getTarget() instanceof MoonChain))) {
+            		player.moveTo(touchPoint.set(x, y));
+            	}
 
                 super.pan(event, x, y, deltaX, deltaY);
             }
@@ -173,6 +181,19 @@ public class GameStage extends Stage {
                 }
                 super.tap(event, x, y, count, button);
             }
+
+			@Override
+			public void fling(InputEvent event, float velocityX, float velocityY, int button) {
+				Gdx.app.log("GameStage", String.format("fling velocityX:%.2f velocityY:%.2f", velocityX, velocityY));
+				if(player.isMoonThrowEnabled() && velocityY < 0 && chain.isAttached() && event.getTarget() instanceof MoonChain) {
+					int multiplier = (boss != null && boss.isDefeated()) ? 10 : 2;
+					moon.addDistance(velocityY * multiplier);
+					chain.animatePull();
+				}
+				super.fling(event, velocityX, velocityY, button);
+			}
+            
+            
         });
 
         addListener(new InputListener() {
@@ -182,8 +203,14 @@ public class GameStage extends Stage {
             public boolean keyDown(InputEvent event, int keycode) {
                 switch (keycode) {
                     case Input.Keys.D:
-                        if(!moon.isFalling())
+                        if(debug && player.isMoonThrowEnabled() && !moon.isFalling()) {
                             moon.startFalling();
+                        }
+                        break;
+                    case Input.Keys.K:
+                        if(debug) {
+                            clearAllEnemies();
+                        }
                         break;
                     case Input.Keys.SPACE:
                         attackCounter++;
@@ -227,13 +254,37 @@ public class GameStage extends Stage {
         });
     }
 
-    private void loadMusic() {
+    private void loadFont() {
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/anonymous_pro_b.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        parameter.size = 20;
+        font = generator.generateFont(parameter);
+        generator.dispose();
+    }
+
+    /*
+     * For debugging only: removes all enemy actors from the screen.
+     */
+    private void clearAllEnemies() {
+    	for(Actor entity : getActors()) {
+            if(entity instanceof Enemy) {
+            	entity.clearActions();
+            	entity.remove();
+            }
+    	}
+	}
+
+	private void loadSounds() {
         manager.setLoader(Music.class, new MusicLoader(new InternalFileHandleResolver()));
+        manager.setLoader(Sound.class, new SoundLoader(new InternalFileHandleResolver()));
         manager.load(MUSIC_FILENAME, Music.class);
+        manager.load(SFX_TV_ON_FILENAME, Sound.class);
         manager.finishLoading();
 
         music = manager.get(MUSIC_FILENAME);
         music.setLooping(true);
+        
+        tvOnSfx = manager.get(SFX_TV_ON_FILENAME);
     }
 
     private void loadLevel() {
@@ -241,17 +292,6 @@ public class GameStage extends Stage {
         currentLevel.chapter = 1;
 
         int wallX = (int) (WIDTH * 0.75f);
-
-        // boss
-        EnemySpawnWall bossSpawnWall = new EnemySpawnWall();
-        bossSpawnWall.spawnWallX = wallX;
-        EnemySpawn bossSpawn = new EnemySpawn();
-        bossSpawn.enemyId = 100;
-        bossSpawn.location = SpawnLocation.FRONT;
-        bossSpawnWall.enemySpawnList.add(bossSpawn);
-        currentLevel.enemySpawnWallList.add(bossSpawnWall);
-
-        wallX += (int) (WIDTH * 0.75f);
 
         for(int i=0; i<3; ++i) {
             EnemySpawnWall spawnWall = new EnemySpawnWall();
@@ -277,6 +317,15 @@ public class GameStage extends Stage {
 
             wallX += (int) (WIDTH * 0.75f);
         }
+        
+        // boss
+        EnemySpawnWall bossSpawnWall = new EnemySpawnWall();
+        bossSpawnWall.spawnWallX = wallX;
+        EnemySpawn bossSpawn = new EnemySpawn();
+        bossSpawn.enemyId = 100;
+        bossSpawn.location = SpawnLocation.FRONT;
+        bossSpawnWall.enemySpawnList.add(bossSpawn);
+        currentLevel.enemySpawnWallList.add(bossSpawnWall);
     }
 
     @Override
@@ -292,7 +341,7 @@ public class GameStage extends Stage {
         if(isStageClear()){
         	// do nothing
         }
-        else if(isChainOffscreen()) {
+        else if(isChainOffscreen() && !chain.isAttached()) {
             startGameOver();
         }
         else if(triggerSpawnWall(player.getX())) {
@@ -319,9 +368,12 @@ public class GameStage extends Stage {
     	vlog(String.format("Camera [x:%.0f, y:%.0f, width:%.0f, height:%.0f]", getCamera().position.x, getCamera().position.y, getCamera().viewportWidth, getCamera().viewportHeight));
     	vlog(String.format("Stage [width:%.0f, height:%.0f]", getWidth(), getHeight()));
     	vlog(String.format("Screen [width:%d, height:%d]", getViewport().getScreenWidth(), getViewport().getScreenHeight()));
+    	vlog(String.format("FPS: %d", Gdx.graphics.getFramesPerSecond()));
     	
     	if(wallIndex < currentLevel.enemySpawnWallList.size())
     		vlog(String.format("Current spawn wall [index: %d, x: %d]", wallIndex, currentLevel.enemySpawnWallList.get(wallIndex).spawnWallX));
+    	
+    	vlog(String.format("Moon [distance: %d]", moon.getDistance()));
     	
     	for(Actor entity : getActors()) {
     		String tag = (entity instanceof Player) ? "Player" :
@@ -446,6 +498,9 @@ public class GameStage extends Stage {
 						}
             		})));
                 addActor(boss);
+                addActor(moon);
+                player.enableMoonThrow();
+                chain.hintPullChain();
             }
 
             offsetY += 100;
@@ -478,7 +533,7 @@ public class GameStage extends Stage {
         
         if(debug) {
 	        uiBatch.begin();
-			font.draw(uiBatch, screenLogger.toString(), 50, 200);
+			font.draw(uiBatch, screenLogger.toString(), 50, 300);
 			screenLogger.setLength(0);
 			uiBatch.end();
         }
@@ -510,7 +565,6 @@ public class GameStage extends Stage {
     public void resetLevel() {
         getActors().clear();
         addActor(background);
-        addActor(moon);
         addActor(chain);
         addActor(player);
         addActor(levelDebugRenderer);
@@ -519,10 +573,12 @@ public class GameStage extends Stage {
 
         levelDebugRenderer.setLevel(currentLevel);
 
-        // reset player position and add back to stage
+        background.setWidth(currentLevel.getBackgroundWidth((int) WIDTH));
+        background.setHeight(HEIGHT);
         player.setPosition((WIDTH / 8), (HEIGHT / 2));
         player.reset();
-        moon.setPosition((WIDTH / 2) - (moon.getWidth() / 2), HEIGHT - 100);
+        moon.setPosition((WIDTH / 2) - (moon.getWidth() / 2), HEIGHT);
+        moon.reset();
         chain.attachTail(player);
 
         playerScreenX = 0.0f;
@@ -537,7 +593,21 @@ public class GameStage extends Stage {
         }
         wallIndex = 0;
 
-        music.play();
+        addAction(
+    		Actions.sequence(
+    			Actions.run(new Runnable() {
+					@Override
+					public void run() {
+						tvOnSfx.play();
+					}
+    			}),
+    			Actions.delay(2f),
+    			Actions.run(new Runnable() {
+					@Override
+					public void run() {
+						music.play();
+					}
+    			})));
     }
     
     private void vlog(String line) {
@@ -545,7 +615,7 @@ public class GameStage extends Stage {
     }
 
 	public boolean isStageClear() {
-		return boss != null && boss.isDefeated();
+		return moon.getDistance() <= 0;
 	}
 	
 	public void stopMusic() {
@@ -561,11 +631,13 @@ public class GameStage extends Stage {
 		
 		fadingOut = true;
 		
+		moon.startFalling();
+		
 		addActor(screenFadeActor);
 		
 		screenFadeActor.addAction(
     			Actions.sequence(
-					Actions.color(Color.BLACK, 5f), 
+					Actions.color(Color.RED, 5f, Interpolation.exp5In), 
 					Actions.run(runnable)));
 	}
 

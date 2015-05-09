@@ -24,8 +24,10 @@
 package broken.shotgun.throwthemoon.actors;
 
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.assets.loaders.SoundLoader;
 import com.badlogic.gdx.assets.loaders.TextureLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -36,17 +38,24 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 
 public class Moon extends Actor {
+	private static final int DISTANCE_TO_EARTH_IN_MILES = 238900;
     private static final String TEXTURE_FILENAME = "moon.png";
+    private static final String SFX_MOON_CRASH_FILENAME = "sfx/moon_crash.wav";
     private final Texture texture;
+    private final Sound crashSfx;
     private TextureRegion currentFrame;
     private boolean falling;
+    private int distance;
 
     public Moon(final AssetManager manager) {
         manager.setLoader(Texture.class, new TextureLoader(new InternalFileHandleResolver()));
+        manager.setLoader(Sound.class, new SoundLoader(new InternalFileHandleResolver()));
         manager.load(TEXTURE_FILENAME, Texture.class);
+        manager.load(SFX_MOON_CRASH_FILENAME, Sound.class);
         manager.finishLoading();
 
         texture = manager.get(TEXTURE_FILENAME);
+        crashSfx = manager.get(SFX_MOON_CRASH_FILENAME);
 
         currentFrame = new TextureRegion(texture);
 
@@ -54,7 +63,7 @@ public class Moon extends Actor {
         setHeight(currentFrame.getRegionHeight());
         setOrigin(getWidth() / 2, getHeight() / 2);
 
-        falling = false;
+        reset(); 
     }
 
     @Override
@@ -82,9 +91,12 @@ public class Moon extends Actor {
         if(falling) return;
 
         falling = true;
+        distance = 0;
+
+        crashSfx.play(1.0f, 0.5f, 0f);
 
         addAction(
-            Actions.moveBy(10, -getHeight(), 15f, Interpolation.fade));
+            Actions.moveBy(10, -getHeight(), 10f, Interpolation.fade));
     }
 
     public boolean isFalling() {
@@ -92,6 +104,24 @@ public class Moon extends Actor {
     }
 
     public void reset() {
+    	clearActions();
         falling = false;
+        distance = DISTANCE_TO_EARTH_IN_MILES;
     }
+    
+    /**
+     * Determines when moon fall animation should happen.
+     * @return true if distance if less than or equal to 1
+     */
+    public boolean shouldStartFalling() {
+    	return distance <= 0;
+    }
+
+	public void addDistance(float velocityY) {
+		distance += velocityY;
+	}
+
+	public int getDistance() {
+		return distance;
+	}
 }

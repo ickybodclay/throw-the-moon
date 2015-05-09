@@ -64,8 +64,9 @@ public class Player extends Actor {
 
     private final Rectangle collisionArea;
     private final Rectangle attackArea;
-    private boolean takingDamage = false;
-    private boolean dying = false;
+    private boolean takingDamage;
+    private boolean dying;
+    private boolean moonThrowEnabled;
 
     private TextureRegion currentFrame;
 
@@ -134,6 +135,7 @@ public class Player extends Actor {
         attackArea.set(0, 0, 0, 0);
         takingDamage = false;
         dying = false;
+        moonThrowEnabled = false;
         stateTime = 0f;
     }
 
@@ -288,7 +290,7 @@ public class Player extends Actor {
 
         addAction(
                 sequence(
-                        sequence(color(Color.BLACK, 0.5f), color(Color.WHITE, 0.5f), color(Color.BLACK, 0.5f), color(Color.WHITE, 0.5f), color(Color.BLACK, 0.5f), color(Color.WHITE, 0.5f)),
+                        sequence(color(Color.BLACK, 0.25f), color(Color.WHITE, 0.25f), color(Color.BLACK, 0.25f), color(Color.WHITE, 0.25f), color(Color.BLACK, 0.25f), color(Color.WHITE, 0.25f)),
                         run(new Runnable() {
                             @Override
                             public void run() {
@@ -310,4 +312,12 @@ public class Player extends Actor {
                 color(Color.RED, 4f),
                 removeActor()));
     }
+
+	public void enableMoonThrow() {
+		moonThrowEnabled = true;
+	}
+
+	public boolean isMoonThrowEnabled() {
+		return moonThrowEnabled;
+	}
 }
