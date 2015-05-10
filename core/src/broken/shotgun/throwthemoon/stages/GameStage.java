@@ -32,6 +32,7 @@ import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -120,7 +121,7 @@ public class GameStage extends Stage {
         moon = new Moon(manager);
         
         screenFadeActor = new Actor();
-        screenFadeActor.setBounds(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        screenFadeActor.setBounds(0, 0, WIDTH, HEIGHT);
         screenFadeActor.setColor(Color.CLEAR);
 
         levelDebugRenderer = new LevelDebugRenderer();
@@ -503,7 +504,6 @@ public class GameStage extends Stage {
                                     }
                                 })));
                 addActor(boss);
-                addActor(moon);
                 player.enableMoonThrow();
                 chain.hintPullChain();
             }
@@ -523,15 +523,12 @@ public class GameStage extends Stage {
         super.draw();
         
         if(isStageClear()) {
+            Gdx.gl.glEnable(GL20.GL_BLEND);
         	renderer.begin(ShapeType.Filled);
         	renderer.setColor(screenFadeActor.getColor());
-        	renderer.rect(
-    			screenFadeActor.getX(), screenFadeActor.getY(), 
-    			screenFadeActor.getOriginX(), screenFadeActor.getOriginY(),
-    			screenFadeActor.getWidth(), screenFadeActor.getHeight(),
-    			screenFadeActor.getScaleX(), screenFadeActor.getScaleY(), 
-    			screenFadeActor.getRotation());
+        	renderer.rect(screenFadeActor.getX(), screenFadeActor.getY(), screenFadeActor.getWidth(), screenFadeActor.getHeight());
         	renderer.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
         }
         
         if(debug) {
@@ -571,8 +568,6 @@ public class GameStage extends Stage {
         addActor(chain);
         addActor(player);
         addActor(levelDebugRenderer);
-        
-        screenFadeActor.setColor(Color.CLEAR);
 
         levelDebugRenderer.setLevel(currentLevel);
 
@@ -630,17 +625,16 @@ public class GameStage extends Stage {
 		if(fadingOut) return;
 		
 		fadingOut = true;
-		
+
+        addActor(moon);
 		moon.startFalling();
 
-        screenFadeActor.setColor(Color.CLEAR);
-		
-		addActor(screenFadeActor);
-		
 		screenFadeActor.addAction(
-    			Actions.sequence(
-					Actions.color(Color.RED, 5f, Interpolation.exp5In), 
-					Actions.run(runnable)));
+                Actions.sequence(
+                        Actions.color(Color.CLEAR),
+                        Actions.color(Color.RED, 5f, Interpolation.exp5In),
+                        Actions.run(runnable)));
+        addActor(screenFadeActor);
 	}
 
 	public boolean isFadingOut() {

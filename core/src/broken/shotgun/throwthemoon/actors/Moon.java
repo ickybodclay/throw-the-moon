@@ -108,14 +108,6 @@ public class Moon extends Actor {
         falling = false;
         distance = DISTANCE_TO_EARTH_IN_MILES;
     }
-    
-    /**
-     * Determines when moon fall animation should happen.
-     * @return true if distance if less than or equal to 1
-     */
-    public boolean shouldStartFalling() {
-    	return distance <= 0;
-    }
 
 	public void addDistance(float velocityY) {
 		distance += velocityY;
