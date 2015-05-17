@@ -1,5 +1,6 @@
 package broken.shotgun.throwthemoon.desktop;
 
+import com.badlogic.gdx.Files;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import broken.shotgun.throwthemoon.ThrowTheMoonGame;
@@ -11,6 +12,7 @@ public class DesktopLauncher {
 		config.height=720;
 		config.vSyncEnabled=true;
 		config.resizable = false;
+		config.addIcon("icon.png", Files.FileType.Internal);
 		new LwjglApplication(new ThrowTheMoonGame(true), config);
 	}
 }
