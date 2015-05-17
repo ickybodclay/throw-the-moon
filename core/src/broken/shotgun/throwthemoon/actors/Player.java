@@ -276,6 +276,10 @@ public class Player extends Actor {
         return takingDamage;
     }
 
+    public void setFlipX(boolean flipX) {
+        this.flipX = flipX;
+    }
+
     public void startWalkState() {
         state = State.WALK;
         moveTarget.set(-1, -1);

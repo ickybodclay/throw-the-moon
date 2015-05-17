@@ -172,6 +172,9 @@ public class GameStage extends Stage {
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 player.performAttack(count);
+                
+                float deltaX = ((player.getX() + player.getOriginX()) - x);
+                player.setFlipX(deltaX > 0);
 
                 // FIXME replace String.format with StringBuilder for HTML
                 if (isDebug()) {
