@@ -134,6 +134,7 @@ public class GameStage extends Stage {
         
         uiBatch = new SpriteBatch();
         renderer = new ShapeRenderer();
+        renderer.setAutoShapeType(true);
 
         touchPoint = new Vector2();
 
@@ -531,7 +532,7 @@ public class GameStage extends Stage {
         super.draw();
 
         if(boss != null) {
-            renderer.begin(ShapeType.Filled);
+            renderer.begin();
             moonImpactMeter.draw(renderer);
             renderer.end();
         }
