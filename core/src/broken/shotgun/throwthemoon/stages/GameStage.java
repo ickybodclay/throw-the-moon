@@ -372,6 +372,7 @@ public class GameStage extends Stage {
         else if(shouldScrollCamera(playerScreenX)) {
             float shiftX = playerScreenX - (getViewport().getScreenWidth() * SCROLL_SCREEN_PERCENT_TRIGGER);
             getCamera().translate(shiftX, 0.0f, 0.0f);
+            player.getMoveTarget().x += shiftX;
             if(!moon.isFalling()) moon.moveBy(shiftX, 0.0f);
         }
     }

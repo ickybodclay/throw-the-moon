@@ -276,6 +276,10 @@ public class Player extends Actor {
         return takingDamage;
     }
 
+    public Vector2 getMoveTarget() {
+        return moveTarget;
+    }
+
     public void setFlipX(boolean flipX) {
         this.flipX = flipX;
     }
