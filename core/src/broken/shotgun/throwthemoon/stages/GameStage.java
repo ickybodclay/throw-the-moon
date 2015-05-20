@@ -63,6 +63,8 @@ import broken.shotgun.throwthemoon.models.EnemySpawn;
 import broken.shotgun.throwthemoon.models.EnemySpawnWall;
 import broken.shotgun.throwthemoon.models.Level;
 import broken.shotgun.throwthemoon.models.SpawnLocation;
+import broken.shotgun.throwthemoon.stages.ui.MoonImpactMeter;
+
 import static broken.shotgun.throwthemoon.ThrowTheMoonGame.isDebug;
 
 public class GameStage extends Stage {
@@ -84,6 +86,7 @@ public class GameStage extends Stage {
     private Moon moon;
     private MoonChain chain;
     private Boss boss;
+    private MoonImpactMeter moonImpactMeter;
     private Actor screenFadeActor;
 
     private final LevelDebugRenderer levelDebugRenderer;
@@ -119,6 +122,8 @@ public class GameStage extends Stage {
         chain = new MoonChain(manager);
         player = new Player(manager);
         moon = new Moon(manager);
+
+        moonImpactMeter = new MoonImpactMeter(moon);
         
         screenFadeActor = new Actor();
         screenFadeActor.setBounds(0, 0, WIDTH, HEIGHT);
@@ -172,7 +177,7 @@ public class GameStage extends Stage {
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 player.performAttack(count);
-                
+
                 float deltaX = ((player.getX() + player.getOriginX()) - x);
                 player.setFlipX(deltaX > 0);
 
@@ -524,6 +529,12 @@ public class GameStage extends Stage {
     @Override
     public void draw() {
         super.draw();
+
+        if(boss != null) {
+            renderer.begin(ShapeType.Filled);
+            moonImpactMeter.draw(renderer);
+            renderer.end();
+        }
         
         if(isStageClear()) {
             Gdx.gl.glEnable(GL20.GL_BLEND);

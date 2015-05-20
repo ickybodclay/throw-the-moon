@@ -38,7 +38,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 
 public class Moon extends Actor {
-	private static final int DISTANCE_TO_EARTH_IN_MILES = 238900;
+	public static final int DISTANCE_TO_EARTH_IN_MILES = 238900;
     private static final String TEXTURE_FILENAME = "moon.png";
     private static final String SFX_MOON_CRASH_FILENAME = "sfx/moon_crash.wav";
     private final Texture texture;
@@ -96,7 +96,7 @@ public class Moon extends Actor {
         crashSfx.play(1.0f, 0.5f, 0f);
 
         addAction(
-            Actions.moveBy(10, -getHeight(), 10f, Interpolation.fade));
+                Actions.moveBy(10, -getHeight(), 10f, Interpolation.fade));
     }
 
     public boolean isFalling() {
@@ -116,4 +116,8 @@ public class Moon extends Actor {
 	public int getDistance() {
 		return distance;
 	}
+
+    public float getImpactProgress() {
+        return 1.0f - ((float)getDistance() / (float) DISTANCE_TO_EARTH_IN_MILES);
+    }
 }
