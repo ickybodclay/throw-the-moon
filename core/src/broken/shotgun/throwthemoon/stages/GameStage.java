@@ -585,6 +585,8 @@ public class GameStage extends Stage {
         addActor(player);
         addActor(levelDebugRenderer);
 
+        boss = null;
+
         levelDebugRenderer.setLevel(currentLevel);
 
         background.setWidth(currentLevel.getBackgroundWidth((int) WIDTH));
